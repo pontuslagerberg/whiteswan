@@ -5,3 +5,9 @@
     #powered_by {
         font-family: "Campton Light";
     }
+#WhiteSwanIframe {
+ border:0px;
+ width:100%;
+ min-width:350px;
+ min-height:700px;
+}
