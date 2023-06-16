@@ -8,7 +8,7 @@
 //# sourceMappingURL=iframeResizer.map
 window.addEventListener('load', function() {
         iFrameResize({log:true},'#WhiteSwanIframe');
-    }
+    });
 window.addEventListener('load', function() {
     var iframe = document.getElementById('WhiteSwanIframe');
 
