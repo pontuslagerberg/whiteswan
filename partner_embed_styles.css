@@ -7,7 +7,7 @@
     }
 #WhiteSwanIframe {
  border:0px;
- width:100%;
+ width:100vw;
  min-width:350px;
  min-height:700px;
 }
