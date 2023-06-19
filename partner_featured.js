@@ -8,4 +8,3 @@
 //# sourceMappingURL=iframeResizer.map
 window.addEventListener('load', function() {
     iFrameResize('#EmbedFeature');
-    var iframe = document.getElementById('EmbedFeature');
