@@ -28,7 +28,7 @@ window.addEventListener('load', function() {
     brandingDiv.appendChild(image);
     document.body.appendChild(brandingDiv);
 
-    window.onscroll = function() {
+window.onscroll = function() {
         var rect = iframe.getBoundingClientRect();
         var iframeBottomAbsolute = window.scrollY + rect.bottom; // Absolute bottom of the iframe
         if (window.scrollY > iframeBottomAbsolute - window.innerHeight) {
