@@ -35,11 +35,11 @@ window.addEventListener('load', function() {
     image1.style.marginBottom = '0.23px';
 
     var image2 = document.createElement('img');
-    image2.src = 'https://762d0145e332a78fcb6f9b9f529c26ab.cdn.bubble.io/f1687224036692x980309592300886900/wslogopoweredby.svg';
+    image2.src = 'https://762d0145e332a78fcb6f9b9f529c26ab.cdn.bubble.io/f1687228487060x445089023249106500/wspoweredbylogo.png';
 image2.alt = 'White Swan Partner Logo';
     image2.style.width = '89px';
     image2.style.height = 'auto';
-image2.style.marginTop = '-10px';
+image2.style.marginTop = '0px';
     image2.style.marginBottom = '0.6px';
 
     var link = document.createElement('a');
@@ -52,6 +52,7 @@ image2.style.marginTop = '-10px';
 
     brandingDiv.appendChild(imagesDiv);
     document.body.appendChild(brandingDiv);
+
 
 
 window.onscroll = function() {
