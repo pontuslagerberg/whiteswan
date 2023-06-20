@@ -60,7 +60,7 @@ window.onscroll = function() {
         var iframeBottomAbsolute = window.scrollY + rect.bottom; // Absolute bottom of the iframe
         if (window.scrollY > iframeBottomAbsolute - window.innerHeight) {
             brandingDiv.style.position = 'absolute';
-            brandingDiv.style.bottom = '30px';
+            brandingDiv.style.bottom = '50px';
             brandingDiv.style.top = (iframeBottomAbsolute - brandingDiv.offsetHeight) + 'px';
         } else {
             brandingDiv.style.position = 'fixed';
