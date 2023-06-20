@@ -39,7 +39,7 @@ window.addEventListener('load', function() {
 image2.alt = 'White Swan Partner Logo';
     image2.style.width = '89px';
     image2.style.height = 'auto';
-image2.style.marginTop = '-6px';
+image2.style.marginTop = '-4px';
     image2.style.marginBottom = '0.6px';
 
     var link = document.createElement('a');
