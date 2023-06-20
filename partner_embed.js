@@ -19,6 +19,8 @@ window.addEventListener('load', function() {
     brandingDiv.style.backgroundColor = '#fff';
     brandingDiv.style.borderRadius = '10px';
     brandingDiv.style.maxHeight = 'fit-content';
+    brandingDiv.style.alignItems = 'center';
+
 
     var imagesDiv = document.createElement('div');
     imagesDiv.style.width = '161px';
@@ -37,7 +39,7 @@ window.addEventListener('load', function() {
 image2.alt = 'White Swan Partner Logo';
     image2.style.width = '89px';
     image2.style.height = 'auto';
-    image2.style.marginTop = '0';
+image2.style.marginTop = '-10px';
     image2.style.marginBottom = '0.6px';
 
     var link = document.createElement('a');
@@ -50,6 +52,7 @@ image2.alt = 'White Swan Partner Logo';
 
     brandingDiv.appendChild(imagesDiv);
     document.body.appendChild(brandingDiv);
+
 
 window.onscroll = function() {
         var rect = iframe.getBoundingClientRect();
