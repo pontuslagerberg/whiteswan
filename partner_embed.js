@@ -17,15 +17,38 @@ window.addEventListener('load', function() {
     brandingDiv.style.transform = 'translateX(-50%)';
     brandingDiv.style.padding = '15px 15px 15px 15px'; 
     brandingDiv.style.backgroundColor = '#fff';
-    brandingDiv.style.borderRadius = '10px'; // Rounded corners
-    brandingDiv.style.maxHeight = 'fit-content'; // max-height equal to the content height
+    brandingDiv.style.borderRadius = '10px';
+    brandingDiv.style.maxHeight = 'fit-content';
 
-    var image = document.createElement('img');
-    image.src = 'https://762d0145e332a78fcb6f9b9f529c26ab.cdn.bubble.io/f1686841360789x450370912178613060/Powered%20By.svg';
-    image.style.width = '161px';
-    image.style.height = 'auto';
+    var imagesDiv = document.createElement('div');
+    imagesDiv.style.width = '161px';
+    imagesDiv.style.display = 'flex';
+    imagesDiv.style.justifyContent = 'space-between';
 
-    brandingDiv.appendChild(image);
+    var image1 = document.createElement('img');
+    image1.src = 'https://762d0145e332a78fcb6f9b9f529c26ab.cdn.bubble.io/f1687223907166x372570148873097660/Powered_by_text.svg';
+    image1.style.width = '65.19px';
+    image1.style.height = 'auto';
+    image1.style.marginTop = '1.48px';
+    image1.style.marginBottom = '0.23px';
+
+    var image2 = document.createElement('img');
+    image2.src = 'https://762d0145e332a78fcb6f9b9f529c26ab.cdn.bubble.io/f1687224036692x980309592300886900/wslogopoweredby.svg';
+image2.alt = 'White Swan Partner Logo';
+    image2.style.width = '89px';
+    image2.style.height = 'auto';
+    image2.style.marginTop = '0';
+    image2.style.marginBottom = '0.6px';
+
+    var link = document.createElement('a');
+    link.href = 'https://whiteswan.io';
+    link.target = '_blank';
+    link.appendChild(image2);
+
+    imagesDiv.appendChild(image1);
+    imagesDiv.appendChild(link);
+
+    brandingDiv.appendChild(imagesDiv);
     document.body.appendChild(brandingDiv);
 
 window.onscroll = function() {
