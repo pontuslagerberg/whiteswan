@@ -69,3 +69,11 @@ window.onscroll = function() {
         }
     };
 }); 
+
+window.addEventListener("message", function(event) {
+    if (event.data.action === "openWindow") {
+        var url = event.data.url;
+        var windowFeatures = 'width=500,height=600';
+        window.open(url, '_blank', windowFeatures);
+    }
+}, false);
