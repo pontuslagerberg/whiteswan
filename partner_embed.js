@@ -22,7 +22,7 @@ window.addEventListener('load', function() {
     brandingDiv.style.flexDirection = 'column';
     brandingDiv.style.alignItems = 'center';
     brandingDiv.style.right = '30px';
-    brandingDiv.style.transform = 'translateX(-50%)';
+    //brandingDiv.style.transform = 'translateX(-50%)';
     brandingDiv.style.padding = '15px 15px 15px 15px'; 
     brandingDiv.style.backgroundColor = '#fff';
     brandingDiv.style.borderRadius = '10px';
