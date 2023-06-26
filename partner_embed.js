@@ -61,22 +61,19 @@ image2.style.marginTop = '-4px';
     brandingDiv.appendChild(imagesDiv);
     document.body.appendChild(brandingDiv);
 
-
-
-window.onscroll = function() {
-        var rect = iframe.getBoundingClientRect();
-        var iframeBottomAbsolute = window.scrollY + rect.bottom; // Absolute bottom of the iframe
-        if (window.scrollY > iframeBottomAbsolute - window.innerHeight) {
-            brandingDiv.style.position = 'absolute';
-            brandingDiv.style.bottom = '50px';
-            brandingDiv.style.top = (iframeBottomAbsolute - brandingDiv.offsetHeight) + 'px';
-        } else {
-            brandingDiv.style.position = 'fixed';
-            brandingDiv.style.bottom = '30px';
-            brandingDiv.style.top = 'unset';
-        }
-    };
-}); 
+window.addEventListener('scroll', function() {
+    var rect = iframe.getBoundingClientRect();
+    var iframeBottomAbsolute = window.scrollY + rect.bottom; // Absolute bottom of the iframe
+    if (window.scrollY > iframeBottomAbsolute - window.innerHeight) {
+        brandingDiv.style.position = 'absolute';
+        brandingDiv.style.bottom = '50px';
+        brandingDiv.style.top = (iframeBottomAbsolute - brandingDiv.offsetHeight) + 'px';
+    } else {
+        brandingDiv.style.position = 'fixed';
+        brandingDiv.style.bottom = '30px';
+        brandingDiv.style.top = 'unset';
+    }
+}, { passive: true });
 
 window.addEventListener("message", function(event) {
     if (event.data.action === "openWindow") {
