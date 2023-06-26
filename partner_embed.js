@@ -21,7 +21,7 @@ window.addEventListener('load', function() {
     brandingDiv.style.display = 'flex';
     brandingDiv.style.flexDirection = 'column';
     brandingDiv.style.alignItems = 'center';
-    brandingDiv.style.left = '50%';
+    brandingDiv.style.right = '30px';
     brandingDiv.style.transform = 'translateX(-50%)';
     brandingDiv.style.padding = '15px 15px 15px 15px'; 
     brandingDiv.style.backgroundColor = '#fff';
