@@ -80,6 +80,8 @@ window.addEventListener("message", function(event) {
         var url = event.data.url;
         var windowFeatures = 'width=500,height=600';
         window.open(url, '_blank', windowFeatures);
+    } else if (event.data === "scrollToTop") {
+        window.scrollTo({top: 0, behavior: 'smooth'});
     }
 }, false);
 });
