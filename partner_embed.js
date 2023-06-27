@@ -82,3 +82,4 @@ window.addEventListener("message", function(event) {
         window.open(url, '_blank', windowFeatures);
     }
 }, false);
+}
