@@ -85,7 +85,6 @@ window.addEventListener("message", function(event) {
         window.scrollTo({top: 0, behavior: 'smooth'});
     }
 }, false);
-});
 
 window.addEventListener('load', function() {
     sendFrameHeight();
@@ -100,3 +99,4 @@ function sendFrameHeight() {
     var iframe = document.getElementById('WhiteSwanIframe');
     iframe.contentWindow.postMessage({ 'minHeight': vh }, '*');
 }
+});
