@@ -86,10 +86,13 @@ window.addEventListener("message", function(event) {
     }
 }, false);
 
-    function sendFrameHeight() {
+function sendFrameHeight() {
     var vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
     var iframe = document.getElementById('WhiteSwanIframe');
-    iframe.contentWindow.postMessage({ 'minHeight': vh }, '*');
+    var iframeTopOffset = iframe.getBoundingClientRect().top;
+    var adjustedHeight = vh - iframeTopOffset;
+    iframe.style.minHeight = adjustedHeight + "px";
+    iframe.contentWindow.postMessage({ 'minHeight': adjustedHeight }, '*');
 }
     
     sendFrameHeight();
