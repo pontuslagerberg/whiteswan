@@ -29,6 +29,7 @@ window.addEventListener('load', function() {
     brandingDiv.style.height = '52px'; 
     brandingDiv.style.maxHeight = '52px'; 
     brandingDiv.style.alignItems = 'center';
+    brandingDiv.id = "branding_div";
 
 
     var imagesDiv = document.createElement('div');
