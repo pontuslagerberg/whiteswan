@@ -85,3 +85,17 @@ window.addEventListener("message", function(event) {
     }
 }, false);
 });
+
+window.addEventListener('load', function() {
+    sendFrameHeight();
+});
+
+window.addEventListener('resize', function() {
+    sendFrameHeight();
+});
+
+function sendFrameHeight() {
+    var vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+    var iframe = document.getElementById('WhiteSwanIframe');
+    iframe.contentWindow.postMessage({ 'minHeight': vh }, '*');
+}
