@@ -67,8 +67,7 @@ window.addEventListener('scroll', function() {
     var iframeBottomAbsolute = window.scrollY + rect.bottom; // Absolute bottom of the iframe
     if (window.scrollY > iframeBottomAbsolute - window.innerHeight) {
         brandingDiv.style.position = 'absolute';
-        brandingDiv.style.bottom = '50px';
-        brandingDiv.style.top = (iframeBottomAbsolute - brandingDiv.offsetHeight) + 'px';
+        brandingDiv.style.bottom = '30px';
     } else {
         brandingDiv.style.position = 'fixed';
         brandingDiv.style.bottom = '30px';
@@ -99,4 +98,6 @@ function sendFrameHeight() {
     var iframe = document.getElementById('WhiteSwanIframe');
     iframe.contentWindow.postMessage({ 'minHeight': vh }, '*');
 }
+
+    
 });
