@@ -89,10 +89,7 @@ window.addEventListener("message", function(event) {
 function sendFrameHeight() {
     var vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
     var iframe = document.getElementById('WhiteSwanIframe');
-    var iframeTopOffset = iframe.getBoundingClientRect().top;
-    var adjustedHeight = vh - iframeTopOffset;
-    iframe.style.minHeight = adjustedHeight + "px";
-    iframe.contentWindow.postMessage({ 'minHeight': adjustedHeight }, '*');
+    iframe.contentWindow.postMessage({ 'minHeight': vh }, '*');
 }
     
     sendFrameHeight();
