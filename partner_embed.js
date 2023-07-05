@@ -16,7 +16,6 @@ window.addEventListener('load', function() {
     var brandingDiv = document.createElement('div');
     brandingDiv.style.position = 'fixed';
     brandingDiv.style.bottom = '30px';
-    brandingDiv.style.zIndex = '999999';
     brandingDiv.style.border = '1px solid #201139';
     brandingDiv.style.display = 'flex';
     brandingDiv.style.flexDirection = 'column';
