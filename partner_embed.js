@@ -67,7 +67,8 @@ window.addEventListener('scroll', function() {
     var iframeBottomAbsolute = window.scrollY + rect.bottom; // Absolute bottom of the iframe
     if (window.scrollY > iframeBottomAbsolute - window.innerHeight) {
         brandingDiv.style.position = 'absolute';
-        brandingDiv.style.bottom = '30px';
+        brandingDiv.style.bottom = 'unset';
+        brandingDiv.style.top = (iframeBottomAbsolute - brandingDiv.offsetHeight - 30) + 'px'; // 30 is the distance from bottom
     } else {
         brandingDiv.style.position = 'fixed';
         brandingDiv.style.bottom = '30px';
