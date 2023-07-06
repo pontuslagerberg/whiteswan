@@ -83,6 +83,8 @@ window.addEventListener("message", function(event) {
         window.open(url, '_blank', windowFeatures);
     } else if (event.data === "scrollToTop") {
         window.scrollTo({top: 0, behavior: 'smooth'});
+    } else if (event.data.action === "AdjustHeight") {
+        sendFrameHeight();
     }
 }, false);
 
