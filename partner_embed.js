@@ -25,7 +25,6 @@ window.addEventListener('load', function() {
     brandingDiv.style.padding = '15px 15px 15px 15px'; 
     brandingDiv.style.backgroundColor = '#fff';
     brandingDiv.style.borderRadius = '10px';
-    brandingDiv.style.height = '52px'; 
     brandingDiv.style.maxHeight = '52px'; 
     brandingDiv.style.alignItems = 'center';
     brandingDiv.id = "branding_div";
