@@ -35,11 +35,14 @@ window.addEventListener('load', function() {
     imagesDiv.style.width = '161px';
     imagesDiv.style.display = 'flex';
     imagesDiv.style.justifyContent = 'space-between';
+    imagesDiv.style.height = '20px'; 
+    imagesDiv.style.maxHeight = '20px'; 
 
     var image1 = document.createElement('img');
     image1.src = 'https://762d0145e332a78fcb6f9b9f529c26ab.cdn.bubble.io/f1687223907166x372570148873097660/Powered_by_text.svg';
     image1.style.width = '65.19px';
-    image1.style.height = 'auto';
+    image1.style.height = '18.3125px';
+    image1.style.maxHeight = '18.3125px';
     image1.style.marginTop = '1.48px';
     image1.style.marginBottom = '0.23px';
 
@@ -47,7 +50,8 @@ window.addEventListener('load', function() {
     image2.src = 'https://762d0145e332a78fcb6f9b9f529c26ab.cdn.bubble.io/f1687228487060x445089023249106500/wspoweredbylogo.png';
 image2.alt = 'White Swan Partner Logo';
     image2.style.width = '89px';
-    image2.style.height = 'auto';
+    image2.style.height = '11px';
+    image2.style.maxHeight = '11px';
 image2.style.marginTop = '-4px';
     image2.style.marginBottom = '0.6px';
 
@@ -55,6 +59,8 @@ image2.style.marginTop = '-4px';
     link.href = 'https://whiteswan.io';
     link.target = '_blank';
     link.appendChild(image2);
+    link.style.height = '20px';
+    link.style.maxHeight = '20px';
 
     imagesDiv.appendChild(image1);
     imagesDiv.appendChild(link);
@@ -64,11 +70,11 @@ image2.style.marginTop = '-4px';
 
 window.addEventListener('scroll', function() {
     var rect = iframe.getBoundingClientRect();
-    var iframeBottomAbsolute = window.scrollY + rect.bottom; // Absolute bottom of the iframe
+    var iframeBottomAbsolute = window.scrollY + rect.bottom; 
     if (window.scrollY > iframeBottomAbsolute - window.innerHeight) {
         brandingDiv.style.position = 'absolute';
         brandingDiv.style.bottom = 'unset';
-        brandingDiv.style.top = (iframeBottomAbsolute - brandingDiv.offsetHeight - 30) + 'px'; // 30 is the distance from bottom
+        brandingDiv.style.top = (iframeBottomAbsolute - brandingDiv.offsetHeight - 30) + 'px'; 
     } else {
         brandingDiv.style.position = 'fixed';
         brandingDiv.style.bottom = '30px';
