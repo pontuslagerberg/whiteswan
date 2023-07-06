@@ -51,8 +51,8 @@ image2.alt = 'White Swan Partner Logo';
     image2.style.width = '89px';
     image2.style.height = '11px';
     image2.style.maxHeight = '11px';
-image2.style.marginTop = '-4px';
-    image2.style.marginBottom = '0.6px';
+image2.style.marginTop = '3.4px';
+    image2.style.marginBottom = '0px';
 
     var link = document.createElement('a');
     link.href = 'https://whiteswan.io';
