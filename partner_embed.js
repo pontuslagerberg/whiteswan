@@ -80,11 +80,14 @@ window.addEventListener("message", function(event) {
     if (event.data.action === "openWindow") {
         var url = event.data.url;
         var windowFeatures = 'width=500,height=600';
-        window.open(url, '_blank', windowFeatures);
+        window.top.open(url, '_blank', windowFeatures);
     } else if (event.data === "scrollToTop") {
         window.scrollTo({top: 0, behavior: 'smooth'});
     } else if (event.data.action === "AdjustHeight") {
         sendFrameHeight();
+    } else if (event.data.action === "Redirect") {
+        var url = event.data.url;
+        window.top.location.href = url;
     }
 }, false);
 
