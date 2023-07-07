@@ -58,6 +58,7 @@ image2.style.marginTop = '3.4px';
     link.href = 'https://whiteswan.io';
     link.target = '_blank';
     link.appendChild(image2);
+    link.style.display = 'flex';
     link.style.height = '20px';
     link.style.maxHeight = '20px';
 
