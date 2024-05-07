@@ -9,11 +9,11 @@
 
 // Show the loader as soon as possible with DOMContentLoaded
 document.addEventListener('DOMContentLoaded', function() {
-    // Select the iframe and ensure the ID matches the actual iframe element
+    // Select the iframe with the specified ID
     var iframe = document.getElementById('WhiteSwanQuickQuote');
 
     if (iframe) {
-        console.log("Showing loader...");
+        console.log("Initializing loader...");
 
         // Create a parent container to hold both the iframe and the loader
         var parentContainer = document.createElement('div');
@@ -24,10 +24,10 @@ document.addEventListener('DOMContentLoaded', function() {
         iframe.parentNode.insertBefore(parentContainer, iframe);
         parentContainer.appendChild(iframe);
 
-        // Dynamically create the loader div inside the parent container
+        // Create the loader div with a transparent background inside the parent container
         var loader = document.createElement('div');
         loader.setAttribute('id', 'iframe-loader');
-        loader.setAttribute('style', 'position: absolute; width: 100%; height: 100%; top: 0; left: 0; background-color: rgba(255, 255, 255, 0.8); z-index: 10;');
+        loader.setAttribute('style', 'position: absolute; width: 100%; height: 100%; top: 0; left: 0; background-color: rgba(255, 255, 255, 0); z-index: 10;'); // Transparent
         loader.innerHTML = `
             <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
                 <img src="https://762d0145e332a78fcb6f9b529c26ab.cdn.bubble.io/f1704422279269x624430105089719440/lightmode%20loader.svg" alt="Loading..." style="width: 60px; height: 60px;">
@@ -35,17 +35,17 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
         parentContainer.appendChild(loader);
 
-        // Ensure that the loader hides and the iframe is shown when fully loaded
+        // Ensure that the loader hides and the iframe shows up when fully loaded
         iframe.onload = function() {
             console.log("Iframe loaded successfully!");
-            loader.style.display = 'none';
-            iframe.style.visibility = 'visible';
+            loader.style.display = 'none'; // Hide the loader
+            iframe.style.visibility = 'visible'; // Make the iframe visible
         };
 
         // Initially hide the iframe until it's fully loaded
         iframe.style.visibility = 'hidden';
     } else {
-        console.error('Iframe with the specified ID not found.');
+        console.error('Iframe with the specified ID not found during DOMContentLoaded event.');
     }
 });
 
@@ -59,20 +59,4 @@ window.addEventListener('load', function() {
     } else {
         console.error('Iframe with the specified ID not found during load event.');
     }
-
-    // Additional message handling if required
-    window.addEventListener("message", function (event) {
-        if (event.data && event.data.action) {
-            if (event.data.action === "openWindow") {
-                var url = event.data.url;
-                var windowFeatures = 'width=500,height=600';
-                window.open(url, '_blank', windowFeatures);
-            } else if (event.data.action === "scrollToTop") {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            } else if (event.data.action === "Redirect") {
-                var url = event.data.url;
-                window.top.location.href = url;
-            }
-        }
-    }, false);
 });
