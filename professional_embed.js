@@ -27,13 +27,28 @@ window.addEventListener('scroll', function() {
     }
 }, { passive: true });
 
-window.addEventListener("message", function(event) {
+window.addEventListener("message", function (event) {
     if (event.data.action === "openWindow") {
         var url = event.data.url;
         var windowFeatures = 'width=500,height=600';
-        window.top.open(url, '_blank', windowFeatures);
+        // Open an independent window
+        window.open(url, '_blank', windowFeatures);
+    } else if (event.data.action === "openTab") {
+        var url = event.data.url;
+        try {
+            // Try to open in a new tab
+            var newTab = window.open(url, '_blank');
+
+            // If the new tab is blocked or not created, fallback to redirect
+            if (!newTab || newTab.closed || typeof newTab.closed == 'undefined') {
+                window.top.location.href = url;
+            }
+        } catch (e) {
+            // In case of an error, fallback to redirect
+            window.top.location.href = url;
+        }
     } else if (event.data === "scrollToTop") {
-        window.scrollTo({top: 0, behavior: 'smooth'});
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (event.data.action === "AdjustHeight") {
         sendFrameHeight();
     } else if (event.data.action === "Redirect") {
