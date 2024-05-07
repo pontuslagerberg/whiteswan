@@ -1,0 +1,11 @@
+#branding_div {
+z-index:1;
+max-height:52px !important;
+}
+#WhiteSwanIframe {
+ border:0px;
+ width:100vw;
+ min-width:100%;
+ min-height:100vh;
+ z-index:0;
+}
