@@ -49,6 +49,42 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+window.addEventListener("message", function (event) {
+    if (event.data.action === "openWindow") {
+        var url = event.data.url;
+        var windowFeatures = 'width=500,height=600';
+        // Open an independent window
+        window.open(url, '_blank', windowFeatures);
+    } else if (event.data.action === "openTab") {
+        var url = event.data.url;
+        try {
+            // Try to open in a new tab
+            var newTab = window.open(url, '_blank');
+
+            // If the new tab is blocked or not created, fallback to redirect
+            if (!newTab || newTab.closed || typeof newTab.closed == 'undefined') {
+                window.top.location.href = url;
+            }
+        } catch (e) {
+            // In case of an error, fallback to redirect
+            window.top.location.href = url;
+        }
+    } else if (event.data === "scrollToTop") {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (event.data.action === "AdjustHeight") {
+        sendFrameHeight();
+    } else if (event.data.action === "Redirect") {
+        var url = event.data.url;
+        window.top.location.href = url;
+    } else if (event.data.action === "scrollToIframe") {
+        var iframe = document.getElementById('WhiteSwanQuickQuote');
+        if (iframe) {
+            var iframeTop = iframe.getBoundingClientRect().top + window.scrollY;
+            window.scrollTo({ top: iframeTop, behavior: 'smooth' });
+        }
+    }
+}, false);
+
 // Initialize iFrameResize after the full window load
 window.addEventListener('load', function() {
     // Ensure the iframe is fully loaded before resizing
