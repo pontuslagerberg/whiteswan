@@ -27,34 +27,81 @@ window.addEventListener('scroll', function() {
     }
 }, { passive: true });
 
-window.addEventListener("message", function (event) {
-    if (event.data.action === "openWindow") {
-        var url = event.data.url;
-        var windowFeatures = 'width=500,height=600';
-        // Open an independent window
-        window.open(url, '_blank', windowFeatures);
-    } else if (event.data.action === "openTab") {
-        var url = event.data.url;
-        try {
-            // Try to open in a new tab
-            var newTab = window.open(url, '_blank');
+window.addEventListener("message", function(event) {
+  const data = event.data;
 
-            // If the new tab is blocked or not created, fallback to redirect
-            if (!newTab || newTab.closed || typeof newTab.closed == 'undefined') {
-                window.top.location.href = url;
-            }
-        } catch (e) {
-            // In case of an error, fallback to redirect
-            window.top.location.href = url;
-        }
-    } else if (event.data === "scrollToTop") {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else if (event.data.action === "AdjustHeight") {
-        sendFrameHeight();
-    } else if (event.data.action === "Redirect") {
-        var url = event.data.url;
-        window.top.location.href = url;
+  // 1) Bare string "scrollToTop" support
+  if (data === "scrollToTop") {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    return;
+  }
+
+  // 2) Everything else must be an object with an "action" field
+  if (!data || typeof data !== "object" || !data.action) return;
+
+  switch (data.action) {
+    // === Open a popup window ===
+    case "openWindow": {
+      window.open(data.url, "_blank", "width=500,height=600");
+      break;
     }
+
+    // === Open a new tab (with fallback) ===
+    case "openTab": {
+      const newTab = window.open(data.url, "_blank");
+      if (!newTab || newTab.closed || typeof newTab.closed === "undefined") {
+        window.top.location.href = data.url;
+      }
+      break;
+    }
+
+    // === Scroll parent to top ===
+    case "scrollToTop": {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      break;
+    }
+
+    // === Ask parent to send updated iframe height ===
+    case "AdjustHeight": {
+      if (typeof sendFrameHeight === "function") {
+        sendFrameHeight();
+      }
+      break;
+    }
+
+    // === Redirect parent window ===
+    case "Redirect": {
+      window.top.location.href = data.url;
+      break;
+    }
+
+    // === Scroll parent so the iframe is in view ===
+    case "scrollToIframe": {
+      // 1) Try the passed-in ID or your QuickQuote default
+      const idToFind = data.iframeId || "WhiteSwanQuickQuote";
+
+      // 2) Fallback chain: ID → class → any iframe
+      const iframe =
+        document.getElementById(idToFind) ||
+        document.querySelector("iframe.WhiteSwanEmbed") ||
+        document.querySelector("iframe");
+
+      if (iframe) {
+        const rect = iframe.getBoundingClientRect();
+        window.scrollTo({
+          top: window.scrollY + rect.top,
+          behavior: "smooth"
+        });
+      }
+      break;
+    }
+
+    // === Add new actions here as needed ===
+
+    default:
+      // unknown action — ignore
+      break;
+  }
 }, false);
 
 function sendFrameHeight() {
