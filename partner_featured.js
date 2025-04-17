@@ -9,3 +9,52 @@
 window.addEventListener('load', function() {
     iFrameResize({selector:'#EmbedFeature'});
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Grab all iframes with the class "WhiteSwanEmbed"
+  const iframes = Array.from(document.querySelectorAll('iframe.WhiteSwanEmbed'));
+
+  // Helper to sync parent → child
+  const syncChild = (iframe, params) => {
+    // If you prefer reload via src:
+    const originalSrc = iframe.getAttribute('data-original-src') || iframe.src;
+    const newSrc = params
+      ? `${originalSrc.split('?')[0]}?${params}`
+      : originalSrc;
+
+    if (iframe.src !== newSrc) {
+      console.log(`Updating iframe (${iframe.className}) src to:`, newSrc);
+      iframe.src = newSrc;
+    }
+
+    // Or, for postMessage sync:
+    // iframe.contentWindow.postMessage({ type: "syncUrl", params }, '*');
+  };
+
+  // Store originals and do initial sync
+  iframes.forEach(iframe => {
+    iframe.setAttribute('data-original-src', iframe.src);
+    const initParams = window.location.search.replace(/^\?/, '');
+    syncChild(iframe, initParams);
+  });
+
+  // When parent URL changes (back/forward)
+  window.addEventListener('popstate', () => {
+    const params = new URLSearchParams(window.location.search).toString();
+    console.log("Parent popstate, params:", params);
+    iframes.forEach(iframe => syncChild(iframe, params));
+  });
+
+  // Listen for child → parent messages
+  window.addEventListener('message', event => {
+    // Optional security check:
+    // if (!iframes.some(f => f.contentWindow === event.source)) return;
+
+    const { type, params } = event.data || {};
+    if (type === "updateUrl") {
+      console.log("Received updateUrl from iframe:", params);
+      const newUrl = `${window.location.origin}${window.location.pathname}${params ? '?' + params : ''}`;
+      history.pushState(null, "", newUrl);
+    }
+  });
+});
