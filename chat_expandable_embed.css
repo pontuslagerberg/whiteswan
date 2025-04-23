@@ -1,0 +1,9 @@
+  #WhiteSwanIframe {
+   border:0px;
+    position: fixed !important;
+    top: auto      !important;  /* cancel any top:0  */
+    left: auto     !important;  /* cancel any left:0 */
+    bottom: 16px   !important;
+    right: 16px    !important;
+    z-index: 100000001 !important;
+  }
