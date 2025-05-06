@@ -1,171 +1,99 @@
-(function(){
-  // Create a <script> tag
-  const iframeResizerScript = document.createElement('script');
-  iframeResizerScript.src = 'https://cdn.jsdelivr.net/npm/@iframe-resizer/parent@latest';
-  iframeResizerScript.onload = () => {
-    // once it’s loaded, you can call iFrameResize()
-    iframeResize({
-  sizeHeight: true,
-  sizeWidth: true,
-  license: 'GPLv3' 
-}, '#WhiteSwanIframe');
-  document.head.appendChild(iframeResizerScript);
-
-window.addEventListener('load', function() {
-    var iframe = document.getElementById('WhiteSwanIframe');
-
-window.addEventListener('scroll', function() {
-    var rect = iframe.getBoundingClientRect();
-    var iframeBottomAbsolute = window.scrollY + rect.bottom; 
-    if (window.scrollY > iframeBottomAbsolute - window.innerHeight) {
-        brandingDiv.style.position = 'absolute';
-        brandingDiv.style.bottom = 'unset';
-        brandingDiv.style.top = (iframeBottomAbsolute - brandingDiv.offsetHeight - 30) + 'px'; 
-    } else {
-        brandingDiv.style.position = 'fixed';
-        brandingDiv.style.bottom = '30px';
-        brandingDiv.style.top = 'unset';
-    }
-}, { passive: true });
-
-window.addEventListener("message", function(event) {
-  const data = event.data;
-
-  // 1) Bare string "scrollToTop" support
-  if (data === "scrollToTop") {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    return;
-  }
-
-  // 2) Everything else must be an object with an "action" field
-  if (!data || typeof data !== "object" || !data.action) return;
-
-  switch (data.action) {
-    // === Open a popup window ===
-    case "openWindow": {
-      window.open(data.url, "_blank", "width=500,height=600");
-      break;
-    }
-
-    // === Open a new tab (with fallback) ===
-    case "openTab": {
-      const newTab = window.open(data.url, "_blank");
-      if (!newTab || newTab.closed || typeof newTab.closed === "undefined") {
-        window.top.location.href = data.url;
+(function () {
+  // 1) Load iframe-resizer parent and defer until iframe exists
+  const irs = document.createElement('script');
+  irs.src = 'https://cdn.jsdelivr.net/npm/@iframe-resizer/parent@latest';
+  irs.onload = () => {
+    const tryResize = () => {
+      if (document.getElementById('WhiteSwanIframe')) {
+        iframeResize({
+          sizeHeight: true,
+          sizeWidth: true,
+          license: 'GPLv3'
+        }, '#WhiteSwanIframe');
+      } else {
+        setTimeout(tryResize, 50);
       }
-      break;
-    }
-
-    // === Scroll parent to top ===
-    case "scrollToTop": {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      break;
-    }
-
-    // === Ask parent to send updated iframe height ===
-    case "AdjustHeight": {
-      if (typeof sendFrameHeight === "function") {
-        sendFrameHeight();
-      }
-      break;
-    }
-
-    // === Redirect parent window ===
-    case "Redirect": {
-      window.top.location.href = data.url;
-      break;
-    }
-
-    // === Scroll parent so the iframe is in view ===
-    case "scrollToIframe": {
-      // 1) Try the passed-in ID or your QuickQuote default
-      const idToFind = data.iframeId || "WhiteSwanQuickQuote";
-
-      // 2) Fallback chain: ID → class → any iframe
-      const iframe =
-        document.getElementById(idToFind) ||
-        document.querySelector("iframe.WhiteSwanEmbed") ||
-        document.querySelector("iframe");
-
-      if (iframe) {
-        const rect = iframe.getBoundingClientRect();
-        window.scrollTo({
-          top: window.scrollY + rect.top,
-          behavior: "smooth"
-        });
-      }
-      break;
-    }
-
-    // === Add new actions here as needed ===
-
-    default:
-      // unknown action — ignore
-      break;
-  }
-}, false);
-
-function sendFrameHeight() {
-    var vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
-    var iframe = document.getElementById('WhiteSwanIframe');
-    iframe.contentWindow.postMessage({ 'minHeight': vh }, '*');
-}
-    
-    sendFrameHeight();
-
-window.addEventListener('resize', function() {
-    sendFrameHeight();
-});
-
-    
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-  // Grab all iframes with the class "WhiteSwanEmbed"
-  const iframes = Array.from(document.querySelectorAll('iframe.WhiteSwanEmbed'));
-
-  // Helper to sync parent → child
-  const syncChild = (iframe, params) => {
-    // If you prefer reload via src:
-    const originalSrc = iframe.getAttribute('data-original-src') || iframe.src;
-    const newSrc = params
-      ? `${originalSrc.split('?')[0]}?${params}`
-      : originalSrc;
-
-    if (iframe.src !== newSrc) {
-      console.log(`Updating iframe (${iframe.className}) src to:`, newSrc);
-      iframe.src = newSrc;
-    }
-
-    // Or, for postMessage sync:
-    // iframe.contentWindow.postMessage({ type: "syncUrl", params }, '*');
+    };
+    tryResize();
   };
+  document.head.appendChild(irs);
 
-  // Store originals and do initial sync
-  iframes.forEach(iframe => {
-    iframe.setAttribute('data-original-src', iframe.src);
-    const initParams = window.location.search.replace(/^\?/, '');
-    syncChild(iframe, initParams);
-  });
+  // 2) On window load: scroll-based branding + messaging + height sync
+  window.addEventListener('load', () => {
+    const iframe = document.getElementById('WhiteSwanIframe');
+    const brandingDiv = document.getElementById('brandingDiv'); // or remove if unused
 
-  // When parent URL changes (back/forward)
-  window.addEventListener('popstate', () => {
-    const params = new URLSearchParams(window.location.search).toString();
-    console.log("Parent popstate, params:", params);
-    iframes.forEach(iframe => syncChild(iframe, params));
-  });
-
-  // Listen for child → parent messages
-  window.addEventListener('message', event => {
-    // Optional security check:
-    // if (!iframes.some(f => f.contentWindow === event.source)) return;
-
-    const { type, params } = event.data || {};
-    if (type === "updateUrl") {
-      console.log("Received updateUrl from iframe:", params);
-      const newUrl = `${window.location.origin}${window.location.pathname}${params ? '?' + params : ''}`;
-      history.pushState(null, "", newUrl);
+    if (iframe && brandingDiv) {
+      window.addEventListener('scroll', () => {
+        const r = iframe.getBoundingClientRect();
+        const bottomAbs = window.scrollY + r.bottom;
+        if (window.scrollY > bottomAbs - window.innerHeight) {
+          brandingDiv.style.position = 'absolute';
+          brandingDiv.style.top = `${bottomAbs - brandingDiv.offsetHeight - 30}px`;
+        } else {
+          brandingDiv.style.position = 'fixed';
+          brandingDiv.style.bottom = '30px';
+        }
+      }, { passive: true });
     }
+
+    // Message handler
+    window.addEventListener('message', event => {
+      const d = event.data;
+      if (d === 'scrollToTop') return window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (!d || typeof d !== 'object' || !d.action) return;
+      switch (d.action) {
+        case 'openWindow': window.open(d.url, '_blank', 'width=500,height=600'); break;
+        case 'openTab': {
+          const t = window.open(d.url, '_blank');
+          if (!t || t.closed) window.top.location.href = d.url;
+          break;
+        }
+        case 'scrollToTop': window.scrollTo({ top: 0, behavior: 'smooth' }); break;
+        case 'AdjustHeight': sendFrameHeight(); break;
+        case 'Redirect': window.top.location.href = d.url; break;
+        case 'scrollToIframe': {
+          const id = d.iframeId || 'WhiteSwanQuickQuote';
+          const target = document.getElementById(id) || document.querySelector('iframe.WhiteSwanEmbed');
+          if (target) {
+            const rr = target.getBoundingClientRect();
+            window.scrollTo({ top: window.scrollY + rr.top, behavior: 'smooth' });
+          }
+          break;
+        }
+      }
+    }, false);
+
+    // Height sync
+    function sendFrameHeight() {
+      const vh = Math.max(document.documentElement.clientHeight, window.innerHeight);
+      const f = document.getElementById('WhiteSwanIframe');
+      if (f && f.contentWindow) f.contentWindow.postMessage({ minHeight: vh }, '*');
+    }
+    window.addEventListener('resize', sendFrameHeight);
+    sendFrameHeight();
   });
-});
+
+  // 3) DOMContentLoaded: URL sync for any .WhiteSwanEmbed iframes
+  document.addEventListener('DOMContentLoaded', () => {
+    const iframes = [...document.querySelectorAll('iframe.WhiteSwanEmbed')];
+    const sync = (iframe, params) => {
+      const orig = iframe.getAttribute('data-original-src') || iframe.src;
+      const next = params ? `${orig.split('?')[0]}?${params}` : orig;
+      if (iframe.src !== next) iframe.src = next;
+    };
+    iframes.forEach(f => {
+      f.setAttribute('data-original-src', f.src);
+      sync(f, window.location.search.slice(1));
+    });
+    window.addEventListener('popstate', () => {
+      const p = new URLSearchParams(window.location.search).toString();
+      iframes.forEach(f => sync(f, p));
+    });
+    window.addEventListener('message', e => {
+      if (e.data?.type === 'updateUrl') {
+        history.pushState(null, '', `${location.pathname}${e.data.params ? '?' + e.data.params : ''}`);
+      }
+    });
+  });
 })();
