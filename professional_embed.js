@@ -4,11 +4,11 @@
   iframeResizerScript.src = 'https://cdn.jsdelivr.net/npm/@iframe-resizer/parent@latest';
   iframeResizerScript.onload = () => {
     // once it’s loaded, you can call iFrameResize()
-    iFrameResize({
-      sizeHeight: true,
-      sizeWidth:  true
-    }, '#WhiteSwanIframe');
-  };
+    iframeResize({
+  sizeHeight: true,
+  sizeWidth: true,
+  license: 'GPLv3' 
+}, '#WhiteSwanIframe');
   document.head.appendChild(iframeResizerScript);
 
 window.addEventListener('load', function() {
