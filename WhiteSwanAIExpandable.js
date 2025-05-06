@@ -1,12 +1,17 @@
 (function () {
-const scripts = document.getElementsByTagName('script');
-let chatUrl;
-for (let script of scripts) {
-  if (script.src.includes('WhiteSwanAIExpandable.js')) {
-    chatUrl = script.getAttribute('data-chat-url');
-    break;
+  // Try using document.currentScript (most reliable)
+  let chatUrl = null;
+  let scriptEl = document.currentScript;
+
+  if (!scriptEl || !scriptEl.getAttribute('data-chat-url')) {
+    // Fallback if currentScript is null or missing the attribute
+    const scripts = document.querySelectorAll('script[src*="WhiteSwanAIExpandable.js"]');
+    scriptEl = scripts[scripts.length - 1]; // last one in DOM
   }
-}
+
+  if (scriptEl) {
+    chatUrl = scriptEl.getAttribute('data-chat-url');
+  }
 
   if (!chatUrl) {
     console.error('[White Swan Chat] Missing data-chat-url attribute on script tag.');
@@ -15,14 +20,12 @@ for (let script of scripts) {
 
   const iframe = document.createElement('iframe');
 
-  // Required attributes
   iframe.src = chatUrl;
   iframe.id = 'WhiteSwanIframe';
   iframe.className = 'ExpandableWhiteSwanAI';
   iframe.loading = 'eager';
   iframe.allowFullscreen = true;
 
-  // Initial styling (chat bubble size)
   Object.assign(iframe.style, {
     position: 'fixed',
     bottom: '16px',
