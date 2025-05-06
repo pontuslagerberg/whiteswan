@@ -1,6 +1,12 @@
 (function () {
-  const currentScript = document.currentScript;
-  const chatUrl = currentScript.getAttribute('data-chat-url');
+const scripts = document.getElementsByTagName('script');
+let chatUrl;
+for (let script of scripts) {
+  if (script.src.includes('WhiteSwanAIExpandable.js')) {
+    chatUrl = script.getAttribute('data-chat-url');
+    break;
+  }
+}
 
   if (!chatUrl) {
     console.error('[White Swan Chat] Missing data-chat-url attribute on script tag.');
