@@ -1,45 +1,49 @@
-/*!Checking domain for embedding*/
+ /*!Checking domain for embedding (robust version)*/
 
-// Store all target iframes
-const iframes = Array.from(document.querySelectorAll("iframe.WhiteSwanEmbed"));
+(function () {
+  const MAX_RETRIES = 8;          // retry 8 × 400ms ≈ 3.2s
+  const RETRY_INTERVAL = 400;
+  let retries = 0;
+  let intervalId = null;
 
-let responded = false;
-let retries = 0;
-let intervalId = null;
-const maxRetries = 3;
-const retryInterval = 300;
-
-// Listen for READY messages from children
-window.addEventListener("message", (event) => {
-  const d = event.data || {};
-  if (d.type === "WHITE_SWAN_CHILD_READY") {
-    console.log("[Parent] Received READY from child — sending origins");
-
-    sendOrigins(); // send to all frames
-    responded = true;
-
-    // fire short retry sequence for redundancy
-    retries = 1;
-    intervalId = setInterval(() => {
-      if (retries >= maxRetries) clearInterval(intervalId);
-      sendOrigins();
-      retries++;
-    }, retryInterval);
+  // Collect iframes reliably
+  const iframes = Array.from(document.querySelectorAll("iframe.WhiteSwanEmbed, iframe[id^='WhiteSwan']"));
+  if (iframes.length === 0) {
+    console.warn("[Parent] No White Swan iframes found on page");
   }
-});
 
-function sendOrigins() {
-  iframes.forEach((iframe) => {
-    if (!iframe?.contentWindow) return;
-    const message = {
-      type: "WHITE_SWAN_PARENT_ORIGIN",
-      origin: window.location.origin,
-      ts: Date.now(),
-    };
-    iframe.contentWindow.postMessage(message, "*");
-    console.log("[Parent] Sent origin →", message.origin, "to", iframe.className || iframe.id);
+  // Wait for child READY
+  window.addEventListener("message", (event) => {
+    const data = event.data || {};
+    if (data.type === "WHITE_SWAN_CHILD_READY") {
+      console.log("[Parent] Received READY from child — sending origin");
+      sendOrigins();
+
+      retries = 1;
+      clearInterval(intervalId);
+      intervalId = setInterval(() => {
+        if (retries >= MAX_RETRIES) clearInterval(intervalId);
+        sendOrigins();
+        retries++;
+      }, RETRY_INTERVAL);
+    }
   });
-}
+
+  function sendOrigins() {
+    const origin = window.location.origin || (window.location.protocol + "//" + window.location.host);
+    iframes.forEach((iframe) => {
+      if (!iframe.contentWindow) return;
+      const msg = {
+        type: "WHITE_SWAN_PARENT_ORIGIN",
+        origin,                   // always full URL
+        id: iframe.id || null,
+        ts: Date.now(),
+      };
+      iframe.contentWindow.postMessage(msg, "*");
+      console.log("[Parent] Sent origin →", origin, "to", iframe.id || iframe.className);
+    });
+  }
+})();
 
 /*! iFrame Resizer (iframeSizer.min.js ) - v4.3.5 - 2023-03-08
  *  Desc: Force cross domain iframes to size to content.
