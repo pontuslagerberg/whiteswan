@@ -1,5 +1,5 @@
 /*!Checking domain for embedding*/
-const iframe = document.getElementById("whiteSwanEmbed");
+const iframe = document.getElementById("WhiteSwanQuickQuote");
   const maxRetries = 6;      // 6 × 250ms = 1.5s
   const retryInterval = 250;
   let responded = false;
