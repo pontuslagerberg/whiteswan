@@ -1,3 +1,39 @@
+/*!Checking domain for embedding*/
+const iframe = document.getElementById("whiteSwanEmbed");
+  const maxRetries = 6;      // 6 × 250ms = 1.5s
+  const retryInterval = 250;
+  let responded = false;
+  let retries = 0;
+  let intervalId = null;
+
+  // Reply when the child sends READY
+  window.addEventListener("message", (event) => {
+    const d = event.data || {};
+    if (d.type === "WHITE_SWAN_CHILD_READY") {
+      console.log("[Parent] Received READY from child — sending origin");
+      sendOrigin();
+      responded = true;
+      // fire short retry sequence for redundancy
+      retries = 1;
+      intervalId = setInterval(() => {
+        if (retries >= maxRetries) clearInterval(intervalId);
+        sendOrigin();
+        retries++;
+      }, retryInterval);
+    }
+  });
+
+  function sendOrigin() {
+    if (!iframe?.contentWindow) return;
+    const message = {
+      type: "WHITE_SWAN_PARENT_ORIGIN",
+      origin: window.location.origin,
+      ts: Date.now(),
+    };
+    iframe.contentWindow.postMessage(message, "*");
+    console.log("[Parent] Sent origin →", message.origin);
+  }
+
 (function () {
   // 1) Load iframe-resizer parent and defer until iframe exists
   const irs = document.createElement('script');
