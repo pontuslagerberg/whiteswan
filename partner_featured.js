@@ -1,29 +1,35 @@
 /*!Checking domain for embedding*/
-const iframe = document.getElementById("whiteSwanEmbed");
-  const maxRetries = 6;      // 6 × 250ms = 1.5s
-  const retryInterval = 250;
-  let responded = false;
-  let retries = 0;
-  let intervalId = null;
 
-  // Reply when the child sends READY
-  window.addEventListener("message", (event) => {
-    const d = event.data || {};
-    if (d.type === "WHITE_SWAN_CHILD_READY") {
-      console.log("[Parent] Received READY from child — sending origin");
-      sendOrigin();
-      responded = true;
-      // fire short retry sequence for redundancy
-      retries = 1;
-      intervalId = setInterval(() => {
-        if (retries >= maxRetries) clearInterval(intervalId);
-        sendOrigin();
-        retries++;
-      }, retryInterval);
-    }
-  });
+// Store all target iframes
+const iframes = Array.from(document.querySelectorAll("iframe.WhiteSwanEmbed"));
 
-  function sendOrigin() {
+let responded = false;
+let retries = 0;
+let intervalId = null;
+const maxRetries = 3;
+const retryInterval = 300;
+
+// Listen for READY messages from children
+window.addEventListener("message", (event) => {
+  const d = event.data || {};
+  if (d.type === "WHITE_SWAN_CHILD_READY") {
+    console.log("[Parent] Received READY from child — sending origins");
+
+    sendOrigins(); // send to all frames
+    responded = true;
+
+    // fire short retry sequence for redundancy
+    retries = 1;
+    intervalId = setInterval(() => {
+      if (retries >= maxRetries) clearInterval(intervalId);
+      sendOrigins();
+      retries++;
+    }, retryInterval);
+  }
+});
+
+function sendOrigins() {
+  iframes.forEach((iframe) => {
     if (!iframe?.contentWindow) return;
     const message = {
       type: "WHITE_SWAN_PARENT_ORIGIN",
@@ -31,8 +37,9 @@ const iframe = document.getElementById("whiteSwanEmbed");
       ts: Date.now(),
     };
     iframe.contentWindow.postMessage(message, "*");
-    console.log("[Parent] Sent origin →", message.origin);
-  }
+    console.log("[Parent] Sent origin →", message.origin, "to", iframe.className || iframe.id);
+  });
+}
 
 /*! iFrame Resizer (iframeSizer.min.js ) - v4.3.5 - 2023-03-08
  *  Desc: Force cross domain iframes to size to content.
