@@ -1,38 +1,70 @@
 /*!Checking domain for embedding*/
 const iframe = document.getElementById("WhiteSwanIframe");
-  const maxRetries = 6;      // 6 × 250ms = 1.5s
-  const retryInterval = 250;
-  let responded = false;
-  let retries = 0;
-  let intervalId = null;
+  /*! Checking domain for embedding (partner_embed) */
+const maxRetries = 6;      // 6 × 250ms = 1.5s
+const retryInterval = 250;
 
-  // Reply when the child sends READY
-  window.addEventListener("message", (event) => {
-    const d = event.data || {};
-    if (d.type === "WHITE_SWAN_CHILD_READY") {
-      console.log("[Parent] Received READY from child — sending origin");
+let responded = false;
+let originAcked = false;
+let retries = 0;
+let intervalId = null;
+let childWindow = null;
+let childOrigin = null;
+
+// Listen for messages from child (READY and ORIGIN_ACK)
+window.addEventListener("message", (event) => {
+  const d = event.data || {};
+
+  // Only handle our two message types
+  if (d.type !== "WHITE_SWAN_CHILD_READY" && d.type !== "WHITE_SWAN_CHILD_ORIGIN_ACK") return;
+
+  // Start handshake if we haven't started yet OR it's a new iframe instance (reload/new contentWindow)
+  if (d.type === "WHITE_SWAN_CHILD_READY" && (!responded || event.source !== childWindow)) {
+    console.log("[Parent - partner_embed] Received READY from child — starting origin send sequence");
+    childWindow = event.source;
+    childOrigin = event.origin || "*";
+    responded = true;
+    originAcked = false;
+
+    // immediate send + short retry sequence
+    sendOrigin();
+    retries = 1;
+    if (intervalId) clearInterval(intervalId);
+    intervalId = setInterval(() => {
+      if (originAcked) { clearInterval(intervalId); intervalId = null; return; }
+      if (retries >= maxRetries) { clearInterval(intervalId); intervalId = null; return; }
       sendOrigin();
-      responded = true;
-      // fire short retry sequence for redundancy
-      retries = 1;
-      intervalId = setInterval(() => {
-        if (retries >= maxRetries) clearInterval(intervalId);
-        sendOrigin();
-        retries++;
-      }, retryInterval);
-    }
-  });
-
-  function sendOrigin() {
-    if (!iframe?.contentWindow) return;
-    const message = {
-      type: "WHITE_SWAN_PARENT_ORIGIN",
-      origin: window.location.origin,
-      ts: Date.now(),
-    };
-    iframe.contentWindow.postMessage(message, "*");
-    console.log("[Parent] Sent origin →", message.origin);
+      retries++;
+    }, retryInterval);
   }
+
+  // Stop when child ACKs (only if from same childWindow)
+  if (d.type === "WHITE_SWAN_CHILD_ORIGIN_ACK" && event.source === childWindow) {
+    console.log("[Parent - partner_embed] Received ORIGIN_ACK from child — clearing retries");
+    originAcked = true;
+    if (intervalId) { clearInterval(intervalId); intervalId = null; }
+  }
+});
+
+function sendOrigin() {
+  // re-query iframe in case DOM replaced it
+  const currentIframe = document.getElementById("WhiteSwanIframe");
+  if (!currentIframe?.contentWindow) return;
+
+  const message = {
+    type: "WHITE_SWAN_PARENT_ORIGIN",
+    origin: window.location.origin,
+    ts: Date.now(),
+  };
+
+  const target = childOrigin || "*";
+  try {
+    currentIframe.contentWindow.postMessage(message, target);
+    console.log("[Parent - partner_embed] Sent origin →", message.origin);
+  } catch (err) {
+    console.warn("[Parent - partner_embed] Failed to postMessage to child", err);
+  }
+}
 
 /*! iFrame Resizer (iframeSizer.min.js ) - v4.3.5 - 2023-03-08
  *  Desc: Force cross domain iframes to size to content.
