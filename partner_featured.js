@@ -1,47 +1,92 @@
- /*!Checking domain for embedding (robust version)*/
-
+/*! Checking domain for embedding (partner_featured - multi-iframe, per-child handshake) */
 (function () {
-  const MAX_RETRIES = 8;          // retry 8 × 400ms ≈ 3.2s
+  const MAX_RETRIES = 8;          // 8 × 400ms ≈ 3.2s
   const RETRY_INTERVAL = 400;
-  let retries = 0;
-  let intervalId = null;
 
   // Collect iframes reliably
   const iframes = Array.from(document.querySelectorAll("iframe.WhiteSwanEmbed, iframe[id^='WhiteSwan']"));
   if (iframes.length === 0) {
-    console.warn("[Parent] No White Swan iframes found on page");
+    console.warn("[Parent - partner_featured] No White Swan iframes found on page");
   }
 
-  // Wait for child READY
+  // Map each child window -> handshake state
+  // Use Map because event.source is an object (window)
+  const handshakes = new Map();
+
+  // Helper: find iframe element by contentWindow (may be null if not found)
+  function findIframeBySource(source) {
+    return iframes.find((f) => f.contentWindow === source) || null;
+  }
+
   window.addEventListener("message", (event) => {
     const data = event.data || {};
-    if (data.type === "WHITE_SWAN_CHILD_READY") {
-      console.log("[Parent] Received READY from child — sending origin");
-      sendOrigins();
+    const source = event.source;
+    if (!source) return;
 
-      retries = 1;
-      clearInterval(intervalId);
-      intervalId = setInterval(() => {
-        if (retries >= MAX_RETRIES) clearInterval(intervalId);
-        sendOrigins();
-        retries++;
-      }, RETRY_INTERVAL);
+    // START handshake on READY
+    if (data.type === "WHITE_SWAN_CHILD_READY") {
+      let hs = handshakes.get(source);
+
+      // Start a new handshake if none exists or if it's a new iframe instance
+      if (!hs || source !== hs.childWindow) {
+        const iframeEl = findIframeBySource(source); // may be null
+        hs = {
+          childWindow: source,
+          childOrigin: event.origin || "*",
+          iframeEl,
+          responded: true,
+          originAcked: false,
+          retries: 0,
+          intervalId: null
+        };
+        handshakes.set(source, hs);
+
+        console.log("[Parent - partner_featured] Received READY — starting origin send to one child", iframeEl ? iframeEl.id : "(no-id)");
+        sendOriginTo(hs);
+
+        // short retry sequence for this child
+        hs.retries = 1;
+        if (hs.intervalId) clearInterval(hs.intervalId);
+        hs.intervalId = setInterval(() => {
+          if (hs.originAcked) { clearInterval(hs.intervalId); hs.intervalId = null; return; }
+          if (hs.retries >= MAX_RETRIES) { clearInterval(hs.intervalId); hs.intervalId = null; return; }
+          sendOriginTo(hs);
+          hs.retries++;
+        }, RETRY_INTERVAL);
+      } else {
+        // If handshake already started for this source, ignore duplicate READY (prevents restarting an interval)
+        console.log("[Parent - partner_featured] Received duplicate READY for same child — ignoring");
+      }
+      return;
+    }
+
+    // STOP on ORIGIN_ACK for that child
+    if (data.type === "WHITE_SWAN_CHILD_ORIGIN_ACK") {
+      const hs = handshakes.get(source);
+      if (hs && source === hs.childWindow) {
+        console.log("[Parent - partner_featured] Received ORIGIN_ACK from child — clearing retries");
+        hs.originAcked = true;
+        if (hs.intervalId) { clearInterval(hs.intervalId); hs.intervalId = null; }
+        // optional: remove handshake state after ack
+        // handshakes.delete(source);
+      }
     }
   });
 
-  function sendOrigins() {
+  function sendOriginTo(hs) {
     const origin = window.location.origin || (window.location.protocol + "//" + window.location.host);
-    iframes.forEach((iframe) => {
-      if (!iframe.contentWindow) return;
-      const msg = {
-        type: "WHITE_SWAN_PARENT_ORIGIN",
-        origin,                   // always full URL
-        id: iframe.id || null,
-        ts: Date.now(),
-      };
-      iframe.contentWindow.postMessage(msg, "*");
-      console.log("[Parent] Sent origin →", origin, "to", iframe.id || iframe.className);
-    });
+    const msg = {
+      type: "WHITE_SWAN_PARENT_ORIGIN",
+      origin,
+      id: hs.iframeEl?.id || null,
+      ts: Date.now()
+    };
+    try {
+      hs.childWindow.postMessage(msg, hs.childOrigin || "*");
+      console.log("[Parent - partner_featured] Sent origin →", origin, "to", hs.iframeEl ? hs.iframeEl.id : "(no-id)");
+    } catch (err) {
+      console.warn("[Parent - partner_featured] Failed to postMessage to child", err);
+    }
   }
 })();
 
