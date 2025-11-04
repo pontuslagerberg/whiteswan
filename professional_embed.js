@@ -1,38 +1,72 @@
 /*!Checking domain for embedding*/
 const iframe = document.getElementById("WhiteSwanIframe");
-  const maxRetries = 6;      // 6 × 250ms = 1.5s
-  const retryInterval = 250;
-  let responded = false;
-  let retries = 0;
-  let intervalId = null;
+/*! Checking domain for embedding */
+const maxRetries = 6;      // 6 × 250ms = 1.5s
+const retryInterval = 250;
 
-  // Reply when the child sends READY
-  window.addEventListener("message", (event) => {
-    const d = event.data || {};
-    if (d.type === "WHITE_SWAN_CHILD_READY") {
-      console.log("[Parent] Received READY from child — sending origin");
+let responded = false;      // we started a handshake for the current iframe instance
+let originAcked = false;    // child confirmed receipt
+let retries = 0;
+let intervalId = null;
+let childWindow = null;     // reference to the child's window for this handshake
+let childOrigin = null;     // event.origin from child, used as postMessage target
+
+// Listen for messages from child (READY and ORIGIN_ACK)
+window.addEventListener("message", (event) => {
+  const d = event.data || {};
+
+  // Only handle the two message types we expect — ignore everything else
+  if (d.type !== "WHITE_SWAN_CHILD_READY" && d.type !== "WHITE_SWAN_CHILD_ORIGIN_ACK") return;
+
+  // Start handshake if we haven't started yet OR the source is a *new* iframe instance (reload/new contentWindow)
+  if (d.type === "WHITE_SWAN_CHILD_READY" && (!responded || event.source !== childWindow)) {
+    console.log("[Parent] Received READY from child — starting origin send sequence");
+    childWindow = event.source;
+    childOrigin = event.origin || "*";
+    responded = true;
+    originAcked = false;
+
+    // immediate send + short retry sequence
+    sendOrigin();
+    retries = 1;
+    if (intervalId) clearInterval(intervalId);
+    intervalId = setInterval(() => {
+      if (originAcked) { clearInterval(intervalId); intervalId = null; return; }
+      if (retries >= maxRetries) { clearInterval(intervalId); intervalId = null; return; }
       sendOrigin();
-      responded = true;
-      // fire short retry sequence for redundancy
-      retries = 1;
-      intervalId = setInterval(() => {
-        if (retries >= maxRetries) clearInterval(intervalId);
-        sendOrigin();
-        retries++;
-      }, retryInterval);
-    }
-  });
-
-  function sendOrigin() {
-    if (!iframe?.contentWindow) return;
-    const message = {
-      type: "WHITE_SWAN_PARENT_ORIGIN",
-      origin: window.location.origin,
-      ts: Date.now(),
-    };
-    iframe.contentWindow.postMessage(message, "*");
-    console.log("[Parent] Sent origin →", message.origin);
+      retries++;
+    }, retryInterval);
   }
+
+  // When child ACKs, stop retrying (but only if ACK comes from the same childWindow)
+  if (d.type === "WHITE_SWAN_CHILD_ORIGIN_ACK" && event.source === childWindow) {
+    console.log("[Parent] Received ORIGIN_ACK from child — clearing retries");
+    originAcked = true;
+    if (intervalId) { clearInterval(intervalId); intervalId = null; }
+  }
+});
+
+function sendOrigin() {
+  // re-query iframe in case DOM replaced it (helps if iframe element is re-created)
+  const currentIframe = document.getElementById("WhiteSwanQuickQuote");
+  if (!currentIframe?.contentWindow) return;
+
+  const message = {
+    type: "WHITE_SWAN_PARENT_ORIGIN",
+    origin: window.location.origin,
+    ts: Date.now(),
+  };
+
+  // Prefer the stored childOrigin (from the READY message). Fallback to "*" only if unknown.
+  const target = childOrigin || "*";
+
+  try {
+    currentIframe.contentWindow.postMessage(message, target);
+    console.log("[Parent] Sent origin →", message.origin);
+  } catch (err) {
+    console.warn("[Parent] Failed to postMessage to child", err);
+  }
+}
 
 (function () {
   // 1) Load iframe-resizer parent and defer until iframe exists
