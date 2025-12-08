@@ -2,7 +2,7 @@
     var CSS_URL =
       "https://cdn.jsdelivr.net/gh/pontuslagerberg/whiteswan@latest/chat_expandable_embed.css";
     var PRO_EMBED_URL =
-      "https://cdn.jsdelivr.net/gh/pontuslagerberg/whiteswan@latest/professional_embed.js";
+      "https://cdn.jsdelivr.net/gh/pontuslagerberg/whiteswan@latest/professional_embed.js?q=528";
 
     function loadCssOnce(href) {
       var existing = document.querySelector(
