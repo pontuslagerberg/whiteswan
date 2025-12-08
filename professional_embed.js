@@ -182,7 +182,7 @@ window.addEventListener('message', (event) => {
       const tracked = getTrackedIframes(); // uses WS_IFRAME_SELECTORS
 
       if (tracked.length) {
-        iframeResize(
+        iFrameResize(
           {
             sizeHeight: true,
             sizeWidth: true,
