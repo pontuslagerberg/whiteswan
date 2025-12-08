@@ -83,7 +83,6 @@
       var iframe = document.createElement("iframe");
 
       iframe.src = chatUrl;
-      iframe.id = "WhiteSwanIframe";
       iframe.className = "ExpandableWhiteSwanAI";
       iframe.loading = "eager";
       iframe.allowFullscreen = true;
