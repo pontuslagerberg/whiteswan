@@ -5,7 +5,8 @@ const WS_IFRAME_SELECTORS = [
   'iframe#WhiteSwanIframe',
   'iframe#WhiteSwanQuickQuote',
   'iframe.WhiteSwanEmbed',
-  'iframe.WhiteSwanAI',           
+  'iframe.WhiteSwanAI',
+  'iframe.ExpandableWhiteSwanAI'           
 ];
 
 const WS_MAX_RETRIES = 6;        // 6 × 250ms = 1.5s
@@ -173,20 +174,31 @@ window.addEventListener('message', (event) => {
   // 1) Load iframe-resizer parent and defer until iframe exists
   const irs = document.createElement('script');
   irs.src = 'https://cdn.jsdelivr.net/npm/@iframe-resizer/parent@latest';
+  // 1) Load iframe-resizer parent and defer until *any* WS iframe exists
+  const irs = document.createElement('script');
+  irs.src = 'https://cdn.jsdelivr.net/npm/@iframe-resizer/parent@latest';
   irs.onload = () => {
     const tryResize = () => {
-      if (document.getElementById('WhiteSwanIframe')) {
-        iframeResize({
-          sizeHeight: true,
-          sizeWidth: true,
-          license: 'GPLv3'
-        }, '#WhiteSwanIframe');
+      const tracked = getTrackedIframes(); // uses WS_IFRAME_SELECTORS
+
+      if (tracked.length) {
+        iframeResize(
+          {
+            sizeHeight: true,
+            sizeWidth: true,
+            license: 'GPLv3',
+          },
+          tracked // pass the actual iframe elements
+        );
       } else {
         setTimeout(tryResize, 50);
       }
     };
+
     tryResize();
   };
+  document.head.appendChild(irs);
+
   document.head.appendChild(irs);
 
   // 2) On window load: scroll-based branding + messaging + height sync
