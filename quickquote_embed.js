@@ -198,16 +198,30 @@ window.addEventListener("message", function(event) {
   }
 }, false);
 
-// Initialize iFrameResize after the full window load
-window.addEventListener('load', function() {
-    // Ensure the iframe is fully loaded before resizing
-    var iframe = document.getElementById('WhiteSwanQuickQuote');
-    if (iframe) {
-        console.log("Initializing iframe resizing...");
-        iFrameResize({ log: false }, '#WhiteSwanQuickQuote');
-    } else {
-        console.error('Iframe with the specified ID not found during load event.');
-    }
+// Initialize iframeResize v5 via shared loader after window load
+window.addEventListener('load', function () {
+  var iframe = document.getElementById('WhiteSwanQuickQuote');
+
+  if (!iframe) {
+    console.error('Iframe with the specified ID not found during load event.');
+    return;
+  }
+
+  console.log('Initializing iframe resizing (WS loader)...');
+
+  // Use the shared loader helper; this will queue the callback
+  // until @iframe-resizer/parent@5.5.7 is fully loaded.
+  WS_iframeResizeReady(function (resize) {
+    resize(
+      {
+        sizeHeight: true,
+        sizeWidth: true,
+        license: 'GPLv3',
+        log: false
+      },
+      iframe // pass the element directly (or [iframe])
+    );
+  });
 });
 
 document.addEventListener('DOMContentLoaded', () => {
