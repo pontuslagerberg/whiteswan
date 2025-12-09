@@ -1,3 +1,23 @@
+// --- White Swan iframe parent bootstrap stub ---
+(function () {
+  // Synchronous stub so code below can call WS_iframeResizeReady
+  if (!window.WS_iframeResizeReady) {
+    const pending = [];
+    window.__WS_pendingIframeResize = pending;
+    window.WS_iframeResizeReady = function (cb) {
+      pending.push(cb);
+    };
+  }
+
+  // Only inject the shared loader once per page
+  if (window.__WS_parentLoaderInjected) return;
+  window.__WS_parentLoaderInjected = true;
+
+  const s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/gh/pontuslagerberg/whiteswan@latest/ws_iframe_parent_loader.js';
+  document.head.appendChild(s);
+})();
+
 /*! White Swan parent ↔ child origin handshake (multi-iframe aware) */
 
 // Any iframe that matches one of these is considered a White Swan embed
@@ -171,18 +191,13 @@ window.addEventListener('message', (event) => {
 });
 
 (function () {
-  // 1) Load iframe-resizer parent and defer until iframe exists
-  const irs = document.createElement('script');
-  irs.src = 'https://cdn.jsdelivr.net/npm/@iframe-resizer/parent@latest';
-  // 1) Load iframe-resizer parent and defer until *any* WS iframe exists
-  const irs = document.createElement('script');
-  irs.src = 'https://cdn.jsdelivr.net/npm/@iframe-resizer/parent@latest';
-  irs.onload = () => {
-    const tryResize = () => {
+    // 1) Use shared iframe-resizer loader and init all tracked iframes
+  WS_iframeResizeReady(function (resize) {
+    function tryResize() {
       const tracked = getTrackedIframes(); // uses WS_IFRAME_SELECTORS
 
       if (tracked.length) {
-        iFrameResize(
+        resize(
           {
             sizeHeight: true,
             sizeWidth: true,
@@ -193,11 +208,10 @@ window.addEventListener('message', (event) => {
       } else {
         setTimeout(tryResize, 50);
       }
-    };
+    }
 
     tryResize();
-  };
-  document.head.appendChild(irs);
+  });
 
   // 2) On window load: scroll-based branding + messaging + height sync
   window.addEventListener('load', () => {
