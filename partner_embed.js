@@ -86,9 +86,26 @@ function sendOrigin() {
   document.head.appendChild(s);
 })();
 
-window.addEventListener('load', function() {
-    iFrameResize({log:true},'#WhiteSwanIframe');
-});  
+// Initialize iframe-resizer for #WhiteSwanIframe
+window.addEventListener('load', function () {
+  var iframe = document.getElementById('WhiteSwanIframe');
+  if (!iframe) {
+    console.error('Partner Embed: iframe #WhiteSwanIframe not found on load.');
+    return;
+  }
+
+  WS_iframeResizeReady(function (resize) {
+    resize(
+      {
+        sizeHeight: true,
+        sizeWidth: true,
+        license: 'GPLv3',
+        log: true, // keep logging here if you like
+      },
+      iframe
+    );
+  });
+});
 
 window.addEventListener('load', function() {
     var iframe = document.getElementById('WhiteSwanIframe');
@@ -238,19 +255,6 @@ window.addEventListener("message", function(event) {
       break;
   }
 }, false);
-
-function sendFrameHeight() {
-    var vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
-    var iframe = document.getElementById('WhiteSwanIframe');
-    iframe.contentWindow.postMessage({ 'minHeight': vh }, '*');
-}
-    
-    sendFrameHeight();
-
-window.addEventListener('resize', function() {
-    sendFrameHeight();
-});
-
     
 });
 
