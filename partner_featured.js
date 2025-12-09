@@ -110,8 +110,25 @@
   document.head.appendChild(s);
 })();
 
-window.addEventListener('load', function() {
-    iFrameResize({selector:'#EmbedFeature'});
+// Initialize iframe-resizer for #EmbedFeature
+window.addEventListener('load', function () {
+  var iframe = document.getElementById('EmbedFeature');
+  if (!iframe) {
+    console.error('Partner Featured: iframe #EmbedFeature not found on load.');
+    return;
+  }
+
+  WS_iframeResizeReady(function (resize) {
+    resize(
+      {
+        sizeHeight: true,
+        sizeWidth: true,
+        license: 'GPLv3',
+        log: false,
+      },
+      iframe // or [iframe]
+    );
+  });
 });
 
 document.addEventListener('DOMContentLoaded', () => {
