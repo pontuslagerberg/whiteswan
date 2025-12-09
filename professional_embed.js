@@ -199,8 +199,6 @@ window.addEventListener('message', (event) => {
   };
   document.head.appendChild(irs);
 
-  document.head.appendChild(irs);
-
   // 2) On window load: scroll-based branding + messaging + height sync
   window.addEventListener('load', () => {
     const iframe = document.getElementById('WhiteSwanIframe');
