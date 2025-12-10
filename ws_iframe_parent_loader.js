@@ -76,7 +76,7 @@
   if (!window.iframeResize) {
     const s = document.createElement('script');
     // Use your own hosted copy if you want:
-    s.src = 'https://cdn.jsdelivr.net/npm/@iframe-resizer/child@5.5.7';
+    s.src = 'https://cdn.jsdelivr.net/npm/@iframe-resizer/parent@5.5.7';
     s.async = true;
     s.onload = flushQueue;
     s.onerror = function () {
@@ -249,11 +249,67 @@
   // Run once the library is ready
   window.WS_iframeResizeReady(initResizer);
 
-  // Optional: expose a manual trigger for dynamically added iframes
-  window.WS_runIframeResizer = function () {
-    if (window.iframeResize) initResizer(window.iframeResize);
-    else window.WS_iframeResizeReady(initResizer);
-  };
+// ---- 6. Watch for dynamically added iframes and resize them ----
+(function () {
+  if (!('MutationObserver' in window)) return;
+  if (window.__WS_resizeWatcherAttached) return;
+  window.__WS_resizeWatcherAttached = true;
+
+  // Build a simple selector string we can use with .matches()
+  const frameSelector = WS_IFRAME_SELECTORS.join(',');
+
+  const resizeWatcher = new MutationObserver(function (mutationList) {
+    let shouldRun = false;
+
+    for (const mutation of mutationList) {
+      if (!mutation.addedNodes || !mutation.addedNodes.length) continue;
+
+      mutation.addedNodes.forEach(function (node) {
+        if (shouldRun) return; // already decided
+
+        // Only care about elements
+        if (node.nodeType !== 1) return;
+
+        // Direct match (the node itself is an iframe we care about)
+        if (node.matches && node.matches(frameSelector)) {
+          if (!node.dataset.wsIframeResized) {
+            shouldRun = true;
+          }
+          return;
+        }
+
+        // Or it contains one (e.g. a wrapper div with the iframe inside)
+        if (node.querySelector && node.querySelector(frameSelector)) {
+          shouldRun = true;
+        }
+      });
+    }
+
+    if (shouldRun && window.WS_runIframeResizer) {
+      window.WS_runIframeResizer();
+    }
+  });
+
+  function startWatching() {
+    if (!document.body) {
+      // Edge case: if called very early
+      document.addEventListener('DOMContentLoaded', startWatching, { once: true });
+      return;
+    }
+    resizeWatcher.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startWatching, { once: true });
+  } else {
+    startWatching();
+  }
+})();
+
+
 
   // ---- 5. URL sync only for "full embeds", not chat bubble ----
 
