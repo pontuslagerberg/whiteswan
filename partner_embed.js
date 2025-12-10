@@ -97,8 +97,7 @@ window.addEventListener('load', function () {
   WS_iframeResizeReady(function (resize) {
     resize(
       {
-        sizeHeight: true,
-        sizeWidth: true,
+        direction: 'both',
         license: 'GPLv3',
         log: true, // keep logging here if you like
       },
