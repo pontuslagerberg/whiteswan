@@ -10,6 +10,7 @@
   const DEFAULT_SELECTORS = [
     'iframe#WhiteSwanIframe',
     'iframe#WhiteSwanQuickQuote',
+    'iframe#EmbedFeature',
     'iframe.WhiteSwanEmbed',
     'iframe.WhiteSwanAI',
     'iframe.ExpandableWhiteSwanAI',
