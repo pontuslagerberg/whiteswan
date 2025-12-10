@@ -199,8 +199,7 @@ window.addEventListener('message', (event) => {
       if (tracked.length) {
         resize(
           {
-            sizeHeight: true,
-            sizeWidth: true,
+            direction: 'both',
             license: 'GPLv3',
           },
           tracked // pass the actual iframe elements
