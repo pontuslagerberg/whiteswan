@@ -220,37 +220,38 @@
   // ---- 4. Centralized iframeResize init for all tracked iframes ----
 
   function initResizer(resize) {
-    function tryResize() {
-      const tracked = filterResizables(getTrackedIframes());
-      if (tracked.length) {
-        resize(
-          {
-            direction: 'both',
-            license: 'GPLv3',
-            // You probably want this false because your Bubble pages may navigate
-            // across subdomains or environments:
-            checkOrigin: false,
-            // log: 'collapsed',   // handy while debugging
-          },
-          tracked
-        );
+  function tryResize() {
+    const tracked = filterResizables(getTrackedIframes());
+    if (tracked.length) {
+      resize(
+        {
+          direction: 'both',
+          license: 'GPLv3',
+          checkOrigin: false,
+        },
+        tracked
+      );
 
-        tracked.forEach((el) => {
-          el.dataset.wsIframeResized = 'true';
-        });
-      } else {
-        // No frames yet – try again shortly
-        setTimeout(tryResize, 50);
-      }
+      tracked.forEach((el) => {
+        el.dataset.wsIframeResized = 'true';
+      });
+    } else {
+      setTimeout(tryResize, 50);
     }
-
-    tryResize();
   }
+
+  // expose for MutationObserver & others
+  window.WS_runIframeResizer = function () {
+    tryResize();
+  };
+
+  tryResize();
+}
 
   // Run once the library is ready
   window.WS_iframeResizeReady(initResizer);
 
-// ---- 6. Watch for dynamically added iframes and resize them ----
+// ---- 5. Watch for dynamically added iframes and resize them ----
 (function () {
   if (!('MutationObserver' in window)) return;
   if (window.__WS_resizeWatcherAttached) return;
@@ -310,9 +311,107 @@
   }
 })();
 
+  // ---- 6. Shared parent-side message handler (scroll/nav/URL) ----
 
 
-  // ---- 5. URL sync only for "full embeds", not chat bubble ----
+  function scrollToTrackedIframe(opts) {
+    const id = opts && opts.iframeId;
+    let target = null;
+
+    if (id) {
+      target = document.getElementById(id);
+    }
+
+    if (!target) {
+      // Fallback similar to your old code: QuickQuote first, then general embed
+      target =
+        document.getElementById('WhiteSwanQuickQuote') ||
+        document.getElementById('WhiteSwanIframe') ||
+        document.querySelector('iframe.WhiteSwanEmbed');
+    }
+
+    if (!target) return;
+
+    const r = target.getBoundingClientRect();
+    const top = window.scrollY + r.top;
+    window.scrollTo({ top, behavior: 'smooth' });
+  }
+
+  function isFromTrackedIframe(event) {
+    const src = event.source;
+    if (!src) return false;
+    return getTrackedIframes().some((f) => f.contentWindow === src);
+  }
+
+  window.addEventListener(
+    'message',
+    (event) => {
+      const data = event.data;
+
+      // Legacy string message ("scrollToTop")
+      if (data === 'scrollToTop') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+
+      if (!data || typeof data !== 'object') return;
+
+      const { action, type, url, iframeId, params } = data;
+
+      // Optional safety: only react to messages coming from our iframes
+      if (!isFromTrackedIframe(event)) return;
+
+      // QuickQuote-style / generic updateUrl message
+      if (type === 'updateUrl') {
+        const queryString =
+          typeof params === 'string'
+            ? params
+            : new URLSearchParams(params || {}).toString();
+
+        const base = `${window.location.origin}${window.location.pathname}`;
+        const next = queryString ? `${base}?${queryString}` : base;
+
+        if (window.location.href !== next) {
+          history.pushState(null, '', next);
+        }
+        return;
+      }
+
+      // Action-based messages (from professional_embed)
+      switch (action) {
+        case 'openWindow':
+          if (url) window.open(url, '_blank', 'width=500,height=600');
+          break;
+
+        case 'openTab': {
+          if (!url) break;
+          const t = window.open(url, '_blank');
+          if (!t || t.closed) window.top.location.href = url;
+          break;
+        }
+
+        case 'scrollToTop':
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          break;
+
+        case 'Redirect':
+          if (url) window.top.location.href = url;
+          break;
+
+        case 'scrollToIframe':
+          scrollToTrackedIframe({ iframeId });
+          break;
+
+        default:
+          // Unknown action – ignore
+          break;
+      }
+    },
+    false
+  );
+
+
+  // ---- 7. URL sync only for "full embeds", not chat bubble ----
 
   document.addEventListener('DOMContentLoaded', () => {
     const embedIframes = [
@@ -337,14 +436,6 @@
       embedIframes.forEach((f) => sync(f, p));
     });
 
-    window.addEventListener('message', (e) => {
-      if (e.data?.type === 'updateUrl') {
-        history.pushState(
-          null,
-          '',
-          `${location.pathname}${e.data.params ? '?' + e.data.params : ''}`
-        );
-      }
-    });
+    
   });
 })();
