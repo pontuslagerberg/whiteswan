@@ -224,39 +224,55 @@
   // - Only sends WHITE_SWAN_CHILD_ORIGIN_ACK if allowed
   // This file is the plumbing that makes that handshake work for ALL iframes.
 
-  // ---- 4. Centralized iframeResize init for all tracked iframes ----
+// ---- 4. Centralized iframeResize init for all tracked iframes ----
 
-  function initResizer(resize) {
-  function tryResize() {
+function initResizer(resize) {
+  function runResize() {
+    // Re-query DOM *at the time of resizing*
     const tracked = filterResizables(getTrackedIframes());
-    if (tracked.length) {
+
+    if (!tracked.length) {
+      // Nothing visible yet; try again shortly
+      setTimeout(runResize, 50);
+      return;
+    }
+
+    try {
       resize(
         {
           direction: 'both',
           license: 'GPLv3',
-          checkOrigin: false,
+          checkOrigin: false, // same reasoning as in your snippet
         },
         tracked
       );
-
-      tracked.forEach((el) => {
-        el.dataset.wsIframeResized = 'true';
-      });
-    } else {
-      setTimeout(tryResize, 50);
+    } catch (e) {
+      console.error(
+        '[WhiteSwan Parent] iframeResize() threw:',
+        e && e.message,
+        '\nSTACK:\n',
+        e && e.stack,
+        '\nRAW ERROR:',
+        e
+      );
+      return;
     }
+
+    // Mark these as already-initialized so we don't double-resize
+    tracked.forEach((el) => {
+      el.dataset.wsIframeResized = 'true';
+    });
   }
 
-  // expose for MutationObserver & others
-  window.WS_runIframeResizer = function () {
-    tryResize();
-  };
+  // Expose so MutationObserver / other code can rerun it
+  window.WS_runIframeResizer = runResize;
 
-  tryResize();
+  // Initial run
+  runResize();
 }
 
-  // Run once the library is ready
-  window.WS_iframeResizeReady(initResizer);
+// Run once the iframeResizer parent library is ready
+window.WS_iframeResizeReady(initResizer);
 
 // ---- 5. Watch for dynamically added iframes and resize them ----
 (function () {
