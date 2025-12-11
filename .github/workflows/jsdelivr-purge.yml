@@ -79,15 +79,15 @@ jobs:
           purge_with_retry() {
             local url=$1
             local file=$2
-            local max_retries=3
-            local retry_delay=2
+            local max_retries=5
+            local retry_delay=30  # Start with 30s for rate limits
             local attempt=1
             
             while [ $attempt -le $max_retries ]; do
               echo "Attempt $attempt/$max_retries: Purging $file"
               
               # Make the purge request
-              response=$(curl -s -w "\n%{http_code}" -X POST "$url" -H "Accept: application/json" 2>&1)
+              response=$(curl -s -w "\n%{http_code}" -X POST "$url" -H "Accept: application/json" --max-time 30 2>&1)
               http_code=$(echo "$response" | tail -n1)
               body=$(echo "$response" | sed '$d')
               
@@ -98,21 +98,30 @@ jobs:
                 echo ""
                 return 0
               elif [ "$http_code" = "429" ]; then
-                # Rate limited - wait longer
+                # Rate limited - wait longer (jsDelivr throttles for ~60 seconds)
+                if [ $attempt -eq 1 ]; then
+                  retry_delay=30  # First retry: wait 30s
+                elif [ $attempt -eq 2 ]; then
+                  retry_delay=60  # Second retry: wait 60s
+                elif [ $attempt -eq 3 ]; then
+                  retry_delay=90  # Third retry: wait 90s
+                else
+                  retry_delay=120  # Fourth+ retry: wait 120s
+                fi
                 echo "⚠️  Rate limited (HTTP 429), waiting ${retry_delay}s before retry..."
+                echo "   (jsDelivr typically throttles for ~60 seconds)"
                 sleep $retry_delay
-                retry_delay=$((retry_delay * 2))  # Exponential backoff
                 attempt=$((attempt + 1))
               elif [ "$http_code" = "503" ] || [ "$http_code" = "502" ]; then
-                # Service unavailable - retry
-                echo "⚠️  Service unavailable (HTTP $http_code), waiting ${retry_delay}s before retry..."
-                sleep $retry_delay
-                retry_delay=$((retry_delay * 2))
+                # Service unavailable - retry with shorter delay
+                echo "⚠️  Service unavailable (HTTP $http_code), waiting 10s before retry..."
+                sleep 10
                 attempt=$((attempt + 1))
               else
                 echo "❌ Failed to purge $file (HTTP $http_code)"
                 echo "$body" | head -c 300
                 echo ""
+                # For non-retryable errors, don't retry
                 return 1
               fi
             done
@@ -139,8 +148,8 @@ jobs:
                 FAILED_FILES="$FAILED_FILES $file(@main)"
               fi
               
-              # Add delay between requests to avoid throttling
-              sleep 1
+              # Add delay between requests to avoid throttling (longer delay)
+              sleep 3
               
               # Purge @latest
               if purge_with_retry "https://purge.jsdelivr.net/gh/pontuslagerberg/whiteswan@latest/$file" "$file (@latest)"; then
@@ -149,8 +158,8 @@ jobs:
                 FAILED_FILES="$FAILED_FILES $file(@latest)"
               fi
               
-              # Add delay between files to avoid throttling
-              sleep 1
+              # Add delay between files to avoid throttling (longer delay)
+              sleep 3
             fi
           done
           
@@ -158,11 +167,14 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "Purge Summary: $PURGE_COUNT successful"
           if [ -n "$FAILED_FILES" ]; then
-            echo "Failed files:$FAILED_FILES"
+            echo "⚠️  Warning: Some files failed to purge:$FAILED_FILES"
+            echo "   These files may need manual cache purging or will update on next release."
+            echo "   The workflow will continue (non-blocking)."
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            exit 1
+            # Don't exit with error - allow workflow to complete
+            # Cache will eventually update, or can be manually purged
           else
-            echo "All purges completed successfully!"
+            echo "✅ All purges completed successfully!"
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           fi
 
