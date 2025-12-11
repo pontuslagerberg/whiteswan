@@ -96,8 +96,8 @@ jobs:
               http_code=$(echo "$purge_response" | tail -n1)
               purge_body=$(echo "$purge_response" | sed '$d')
               
-              # Check if purge request was accepted
-              if [ "$http_code" = "200" ] || [ "$http_code" = "201" ]; then
+              # Check if purge request was accepted (200, 201, or 202 are all success)
+              if [ "$http_code" = "200" ] || [ "$http_code" = "201" ] || [ "$http_code" = "202" ]; then
                 # Extract job ID from response
                 job_id=$(echo "$purge_body" | grep -o '"id"[[:space:]]*:[[:space:]]*"[^"]*"' | cut -d'"' -f4 || echo "")
                 
