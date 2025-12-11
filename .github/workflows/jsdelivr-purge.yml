@@ -137,16 +137,43 @@ jobs:
                       echo "⚠️  Purge completed but path was throttled"
                       echo "$status_response" | head -c 500
                       echo ""
-                      # Retry after longer delay
-                      if [ $attempt -lt $max_retries ]; then
-                        echo "  Waiting ${retry_delay}s before retry..."
-                        sleep $retry_delay
-                        retry_delay=$((retry_delay * 2))
-                        attempt=$((attempt + 1))
-                        break
+                      
+                      # Extract throttlingReset value (in seconds)
+                      throttling_reset=$(echo "$status_response" | grep -o '"throttlingReset"[[:space:]]*:[[:space:]]*[0-9]*' | grep -o '[0-9]*' || echo "")
+                      
+                      if [ -n "$throttling_reset" ] && [ "$throttling_reset" -gt 0 ]; then
+                        # Use the API's throttlingReset value + 5 second buffer
+                        wait_time=$((throttling_reset + 5))
+                        echo "  API indicates throttle will reset in ${throttling_reset}s"
+                        echo "  Waiting ${wait_time}s (${throttling_reset}s + 5s buffer) before retry..."
+                        
+                        if [ $attempt -lt $max_retries ]; then
+                          # Cap wait time at 1 hour (3600s) to avoid extremely long waits
+                          if [ $wait_time -gt 3600 ]; then
+                            echo "  ⚠️  Wait time exceeds 1 hour, capping at 3600s"
+                            wait_time=3600
+                          fi
+                          
+                          sleep $wait_time
+                          attempt=$((attempt + 1))
+                          break
+                        else
+                          echo "❌ Path throttled after $max_retries attempts"
+                          return 1
+                        fi
                       else
-                        echo "❌ Path throttled after $max_retries attempts"
-                        return 1
+                        # Fallback to exponential backoff if throttlingReset not available
+                        echo "  ⚠️  throttlingReset not available, using exponential backoff"
+                        if [ $attempt -lt $max_retries ]; then
+                          echo "  Waiting ${retry_delay}s before retry..."
+                          sleep $retry_delay
+                          retry_delay=$((retry_delay * 2))
+                          attempt=$((attempt + 1))
+                          break
+                        else
+                          echo "❌ Path throttled after $max_retries attempts"
+                          return 1
+                        fi
                       fi
                     else
                       echo "✅ Successfully purged $file"
