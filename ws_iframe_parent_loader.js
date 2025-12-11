@@ -260,14 +260,14 @@ function initResizer(resize) {
 
     targets.forEach((el) => {
       const chat = isChatIframe(el);
-      const direction = chat ? 'both' : 'height'; // 👈 key change
+      const direction = chat ? 'both' : 'vertical';
 
       try {
         resize(
           {
             direction,
             license: 'GPLv3',
-            checkOrigin: false, // still using your origin handshake plumbing
+            checkOrigin: false, 
           },
           el
         );
