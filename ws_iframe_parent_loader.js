@@ -225,26 +225,44 @@
   // This file is the plumbing that makes that handshake work for ALL iframes.
 
 // ---- 4. Centralized iframeResize init for all tracked iframes ----
-
 function initResizer(resize) {
   function runResize() {
     // Re-query DOM *at the time of resizing*
-    const tracked = filterResizables(getTrackedIframes());
+    const raw = filterResizables(getTrackedIframes());
 
-    if (!tracked.length) {
+    // Extra safety: only keep real <iframe> DOM elements
+    const targets = raw.filter(
+      (el) =>
+        el &&
+        el.nodeType === 1 &&
+        el.tagName === 'IFRAME'
+    );
+
+    if (!targets.length) {
       // Nothing visible yet; try again shortly
       setTimeout(runResize, 50);
       return;
     }
 
     try {
+      // Optional: log what we're about to send for debugging
+      // (you can comment this out later if it's noisy)
+      console.log(
+        '[WhiteSwan Parent] Running iframeResize on targets:',
+        targets.map((el) => ({
+          id: el.id,
+          className: el.className,
+          src: el.src,
+        }))
+      );
+
       resize(
         {
           direction: 'both',
           license: 'GPLv3',
           checkOrigin: false, // same reasoning as in your snippet
         },
-        tracked
+        targets
       );
     } catch (e) {
       console.error(
@@ -259,7 +277,7 @@ function initResizer(resize) {
     }
 
     // Mark these as already-initialized so we don't double-resize
-    tracked.forEach((el) => {
+    targets.forEach((el) => {
       el.dataset.wsIframeResized = 'true';
     });
   }
@@ -270,9 +288,6 @@ function initResizer(resize) {
   // Initial run
   runResize();
 }
-
-// Run once the iframeResizer parent library is ready
-window.WS_iframeResizeReady(initResizer);
 
 // ---- 5. Watch for dynamically added iframes and resize them ----
 (function () {
