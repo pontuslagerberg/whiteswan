@@ -227,10 +227,7 @@
 // ---- 4. Centralized iframeResize init for all tracked iframes ----
 function initResizer(resize) {
   function runResize() {
-    // Re-query DOM *at the time of resizing*
     const raw = filterResizables(getTrackedIframes());
-
-    // Extra safety: only keep real <iframe> DOM elements
     const targets = raw.filter(
       (el) =>
         el &&
@@ -239,55 +236,43 @@ function initResizer(resize) {
     );
 
     if (!targets.length) {
-      // Nothing visible yet; try again shortly
       setTimeout(runResize, 50);
       return;
     }
 
-    try {
-      // Optional: log what we're about to send for debugging
-      // (you can comment this out later if it's noisy)
-      console.log(
-        '[WhiteSwan Parent] Running iframeResize on targets:',
-        targets.map((el) => ({
-          id: el.id,
-          className: el.className,
-          src: el.src,
-        }))
-      );
+    console.log(
+      '[WhiteSwan Parent] Running iframeResize on targets:',
+      targets.map((el) => ({
+        id: el.id,
+        className: el.className,
+        src: el.src,
+      }))
+    );
 
-      resize(
-        {
-          direction: 'both',
-          license: 'GPLv3',
-          checkOrigin: false, // same reasoning as in your snippet
-        },
-        targets
-      );
-    } catch (e) {
-      console.error(
-        '[WhiteSwan Parent] iframeResize() threw:',
-        e && e.message,
-        '\nSTACK:\n',
-        e && e.stack,
-        '\nRAW ERROR:',
-        e
-      );
-      return;
-    }
+    resize(
+      {
+        direction: 'both',
+        license: 'GPLv3',
+        checkOrigin: false,
+      },
+      targets
+    );
 
-    // Mark these as already-initialized so we don't double-resize
     targets.forEach((el) => {
       el.dataset.wsIframeResized = 'true';
     });
   }
 
-  // Expose so MutationObserver / other code can rerun it
   window.WS_runIframeResizer = runResize;
-
-  // Initial run
   runResize();
 }
+
+// ✅ Hook it up here:
+WS_iframeResizeReady(function (resize) {
+  console.log('[WhiteSwan Parent] Initializing iframeResizer via initResizer');
+  initResizer(resize);
+});
+
 
 // ---- 5. Watch for dynamically added iframes and resize them ----
 (function () {
