@@ -86,8 +86,8 @@ jobs:
             while [ $attempt -le $max_retries ]; do
               echo "Attempt $attempt/$max_retries: Purging $file"
               
-              # Make the purge request
-              response=$(curl -s -w "\n%{http_code}" -X POST "$url" -H "Accept: application/json" --max-time 30 2>&1)
+              # Make the purge request (jsDelivr uses GET, not POST)
+              response=$(curl -s -w "\n%{http_code}" -X GET "$url" -H "Accept: application/json" --max-time 30 2>&1)
               http_code=$(echo "$response" | tail -n1)
               body=$(echo "$response" | sed '$d')
               
