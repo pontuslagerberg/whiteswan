@@ -225,6 +225,15 @@
   // This file is the plumbing that makes that handshake work for ALL iframes.
 
 // ---- 4. Centralized iframeResize init for all tracked iframes ----
+  function isChatIframe(el) {
+  if (!el || el.tagName !== 'IFRAME') return false;
+
+  // Adjust this list if you rename / add chat iframe variants
+  return (
+    el.classList.contains('ExpandableWhiteSwanAI')
+  );
+}
+
 function initResizer(resize) {
   function runResize() {
     const raw = filterResizables(getTrackedIframes());
@@ -249,14 +258,16 @@ function initResizer(resize) {
       }))
     );
 
-    // ✨ NEW: call resize per iframe, not on the whole array
     targets.forEach((el) => {
+      const chat = isChatIframe(el);
+      const direction = chat ? 'both' : 'height'; // 👈 key change
+
       try {
         resize(
           {
-            direction: 'both',
+            direction,
             license: 'GPLv3',
-            checkOrigin: false, // we rely on the explicit origin handshake instead
+            checkOrigin: false, // still using your origin handshake plumbing
           },
           el
         );
