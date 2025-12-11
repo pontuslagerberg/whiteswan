@@ -1,0 +1,76 @@
+name: Purge jsDelivr Cache
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '*.js'
+      - '*.css'
+    tags:
+      - '*'
+  release:
+    types: [published]
+
+jobs:
+  purge-cache:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get changed files
+        id: changed_files
+        run: |
+          if [ "${{ github.event_name }}" = "push" ] && [ -n "${{ github.event.before }}" ]; then
+            # For branch pushes, get files changed in this commit
+            CHANGED_FILES=$(git diff --name-only --diff-filter=ACMR "${{ github.event.before }}" HEAD | grep -E '\.(js|css)$' || true)
+          elif [ "${{ github.event_name }}" = "release" ]; then
+            # For releases, get all JS/CSS files (since we don't know what changed)
+            CHANGED_FILES=$(git ls-files | grep -E '\.(js|css)$' || true)
+          else
+            # For tag pushes or fallback, get all JS/CSS files
+            CHANGED_FILES=$(git ls-files | grep -E '\.(js|css)$' || true)
+          fi
+          
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No JS or CSS files changed"
+            echo "files=" >> $GITHUB_OUTPUT
+          else
+            echo "Changed files:"
+            echo "$CHANGED_FILES"
+            # Convert newlines to space-separated list
+            FILES_LIST=$(echo "$CHANGED_FILES" | tr '\n' ' ')
+            echo "files=$FILES_LIST" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Purge jsDelivr cache for changed files
+        if: steps.changed_files.outputs.files != ''
+        run: |
+          FILES="${{ steps.changed_files.outputs.files }}"
+          for file in $FILES; do
+            if [ -f "$file" ]; then
+              echo "Purging cache for @main: $file"
+              curl -s -X POST "https://purge.jsdelivr.net/gh/pontuslagerberg/whiteswan@main/$file" | head -c 200 || true
+              echo ""
+              
+              echo "Purging cache for @latest: $file"
+              curl -s -X POST "https://purge.jsdelivr.net/gh/pontuslagerberg/whiteswan@latest/$file" | head -c 200 || true
+              echo ""
+            fi
+          done
+
+      - name: Summary
+        run: |
+          if [ "${{ steps.changed_files.outputs.files }}" != "" ]; then
+            echo "✅ jsDelivr cache purge completed for changed files"
+            echo "Files purged:"
+            echo "${{ steps.changed_files.outputs.files }}" | tr ' ' '\n'
+            echo ""
+            echo "Files are now available at:"
+            echo "  - https://cdn.jsdelivr.net/gh/pontuslagerberg/whiteswan@main/"
+            echo "  - https://cdn.jsdelivr.net/gh/pontuslagerberg/whiteswan@latest/"
+          else
+            echo "ℹ️  No JS or CSS files were changed in this commit"
+          fi
+
