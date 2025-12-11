@@ -249,17 +249,25 @@ function initResizer(resize) {
       }))
     );
 
-    resize(
-      {
-        direction: 'both',
-        license: 'GPLv3',
-        checkOrigin: false,
-      },
-      targets
-    );
-
+    // ✨ NEW: call resize per iframe, not on the whole array
     targets.forEach((el) => {
-      el.dataset.wsIframeResized = 'true';
+      try {
+        resize(
+          {
+            direction: 'both',
+            license: 'GPLv3',
+            checkOrigin: false, // we rely on the explicit origin handshake instead
+          },
+          el
+        );
+        el.dataset.wsIframeResized = 'true';
+      } catch (e) {
+        console.error(
+          '[WhiteSwan Parent] iframeResize failed for element:',
+          { id: el.id, className: el.className, src: el.src },
+          e
+        );
+      }
     });
   }
 
