@@ -1,5 +1,4 @@
 // ws_iframe_parent_loader.js
-
 (function () {
   // Avoid double-init
   if (window.__WS_parentLoaderInitialized) return;
@@ -68,8 +67,16 @@
       try {
         cb(window.iframeResize);
       } catch (e) {
-        console.error('[WhiteSwan Parent] WS_iframeResizeReady callback failed:', e);
-      }
+  console.error(
+    '[WhiteSwan Parent] WS_iframeResizeReady callback failed:',
+    e && e.message,
+    '\nSTACK:\n',
+    e && e.stack,
+    '\nRAW ERROR:',
+    e
+  );
+   throw e; 
+}
     }
   }
 
