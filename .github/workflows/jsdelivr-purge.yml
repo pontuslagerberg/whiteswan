@@ -75,53 +75,126 @@ jobs:
       - name: Purge jsDelivr cache for changed files
         if: steps.changed_files.outputs.files != ''
         run: |
-          # Function to purge with retry logic
+          # Function to purge with retry logic using the correct jsDelivr API
           purge_with_retry() {
-            local url=$1
+            local path=$1
             local file=$2
             local max_retries=5
-            local retry_delay=30  # Start with 30s for rate limits
+            local retry_delay=30
             local attempt=1
             
             while [ $attempt -le $max_retries ]; do
               echo "Attempt $attempt/$max_retries: Purging $file"
               
-              # Make the purge request
-              response=$(curl -s -w "\n%{http_code}" -X POST "$url" -H "Accept: application/json" --max-time 30 2>&1)
-              http_code=$(echo "$response" | tail -n1)
-              body=$(echo "$response" | sed '$d')
+              # Step 1: POST to purge.jsdelivr.net with JSON body
+              purge_response=$(curl -s -w "\n%{http_code}" -X POST "https://purge.jsdelivr.net" \
+                -H "Content-Type: application/json" \
+                -H "Accept: application/json" \
+                -d "{\"path\": [\"$path\"]}" \
+                --max-time 30 2>&1)
               
-              # Check if successful (200 or 201)
+              http_code=$(echo "$purge_response" | tail -n1)
+              purge_body=$(echo "$purge_response" | sed '$d')
+              
+              # Check if purge request was accepted
               if [ "$http_code" = "200" ] || [ "$http_code" = "201" ]; then
-                echo "✅ Successfully purged $file (HTTP $http_code)"
-                echo "$body" | head -c 300
-                echo ""
-                return 0
+                # Extract job ID from response
+                job_id=$(echo "$purge_body" | grep -o '"id"[[:space:]]*:[[:space:]]*"[^"]*"' | cut -d'"' -f4 || echo "")
+                
+                if [ -z "$job_id" ]; then
+                  echo "⚠️  Could not extract job ID from response"
+                  echo "$purge_body" | head -c 300
+                  echo ""
+                  # Retry
+                  sleep $retry_delay
+                  retry_delay=$((retry_delay * 2))
+                  attempt=$((attempt + 1))
+                  continue
+                fi
+                
+                echo "  Job ID: $job_id"
+                
+                # Step 2: Poll status endpoint until finished
+                local max_polls=30
+                local poll_count=0
+                local poll_delay=2
+                
+                while [ $poll_count -lt $max_polls ]; do
+                  sleep $poll_delay
+                  poll_count=$((poll_count + 1))
+                  
+                  status_response=$(curl -s -X GET "https://purge.jsdelivr.net/status/$job_id" \
+                    -H "Accept: application/json" \
+                    --max-time 10 2>&1)
+                  
+                  status=$(echo "$status_response" | grep -o '"status"[[:space:]]*:[[:space:]]*"[^"]*"' | cut -d'"' -f4 || echo "")
+                  
+                  if [ "$status" = "finished" ]; then
+                    # Check if any paths were throttled
+                    throttled=$(echo "$status_response" | grep -o '"throttled"[[:space:]]*:[[:space:]]*true' || echo "")
+                    
+                    if [ -n "$throttled" ]; then
+                      echo "⚠️  Purge completed but path was throttled"
+                      echo "$status_response" | head -c 500
+                      echo ""
+                      # Retry after longer delay
+                      if [ $attempt -lt $max_retries ]; then
+                        echo "  Waiting ${retry_delay}s before retry..."
+                        sleep $retry_delay
+                        retry_delay=$((retry_delay * 2))
+                        attempt=$((attempt + 1))
+                        break
+                      else
+                        echo "❌ Path throttled after $max_retries attempts"
+                        return 1
+                      fi
+                    else
+                      echo "✅ Successfully purged $file"
+                      echo "$status_response" | head -c 500
+                      echo ""
+                      return 0
+                    fi
+                  elif [ "$status" = "failed" ]; then
+                    echo "❌ Purge job failed"
+                    echo "$status_response" | head -c 500
+                    echo ""
+                    return 1
+                  elif [ "$status" = "pending" ]; then
+                    echo "  Status: pending (poll $poll_count/$max_polls)..."
+                  else
+                    echo "  Status: $status (poll $poll_count/$max_polls)..."
+                  fi
+                done
+                
+                if [ $poll_count -ge $max_polls ]; then
+                  echo "⚠️  Timeout waiting for purge to complete, retrying..."
+                  sleep $retry_delay
+                  retry_delay=$((retry_delay * 2))
+                  attempt=$((attempt + 1))
+                fi
+                
               elif [ "$http_code" = "429" ]; then
-                # Rate limited - wait longer (jsDelivr throttles for ~60 seconds)
+                # Rate limited - wait longer
                 if [ $attempt -eq 1 ]; then
-                  retry_delay=30  # First retry: wait 30s
+                  retry_delay=30
                 elif [ $attempt -eq 2 ]; then
-                  retry_delay=60  # Second retry: wait 60s
+                  retry_delay=60
                 elif [ $attempt -eq 3 ]; then
-                  retry_delay=90  # Third retry: wait 90s
+                  retry_delay=90
                 else
-                  retry_delay=120  # Fourth+ retry: wait 120s
+                  retry_delay=120
                 fi
                 echo "⚠️  Rate limited (HTTP 429), waiting ${retry_delay}s before retry..."
-                echo "   (jsDelivr typically throttles for ~60 seconds)"
                 sleep $retry_delay
                 attempt=$((attempt + 1))
               elif [ "$http_code" = "503" ] || [ "$http_code" = "502" ]; then
-                # Service unavailable - retry with shorter delay
                 echo "⚠️  Service unavailable (HTTP $http_code), waiting 10s before retry..."
                 sleep 10
                 attempt=$((attempt + 1))
               else
-                echo "❌ Failed to purge $file (HTTP $http_code)"
-                echo "$body" | head -c 300
+                echo "❌ Failed to initiate purge (HTTP $http_code)"
+                echo "$purge_body" | head -c 300
                 echo ""
-                # For non-retryable errors, don't retry
                 return 1
               fi
             done
@@ -142,17 +215,17 @@ jobs:
               echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
               
               # Purge @main
-              if purge_with_retry "https://purge.jsdelivr.net/gh/pontuslagerberg/whiteswan@main/$file" "$file (@main)"; then
+              if purge_with_retry "/gh/pontuslagerberg/whiteswan@main/$file" "$file (@main)"; then
                 PURGE_COUNT=$((PURGE_COUNT + 1))
               else
                 FAILED_FILES="$FAILED_FILES $file(@main)"
               fi
               
-              # Add delay between requests to avoid throttling (longer delay)
+              # Add delay between requests to avoid throttling
               sleep 3
               
               # Purge @latest
-              if purge_with_retry "https://purge.jsdelivr.net/gh/pontuslagerberg/whiteswan@latest/$file" "$file (@latest)"; then
+              if purge_with_retry "/gh/pontuslagerberg/whiteswan@latest/$file" "$file (@latest)"; then
                 PURGE_COUNT=$((PURGE_COUNT + 1))
               else
                 FAILED_FILES="$FAILED_FILES $file(@latest)"
