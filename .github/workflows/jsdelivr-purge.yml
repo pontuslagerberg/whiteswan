@@ -18,19 +18,47 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for tags
+          ref: ${{ github.ref }}
 
       - name: Get changed files
         id: changed_files
         run: |
-          if [ "${{ github.event_name }}" = "push" ] && [ -n "${{ github.event.before }}" ]; then
+          CURRENT_TAG=""
+          
+          if [ "${{ github.event_name }}" = "push" ] && [ -n "${{ github.event.before }}" ] && ! echo "${{ github.ref }}" | grep -q "^refs/tags/"; then
             # For branch pushes, get files changed in this commit
             CHANGED_FILES=$(git diff --name-only --diff-filter=ACMR "${{ github.event.before }}" HEAD | grep -E '\.(js|css)$' || true)
+            echo "Event: Branch push to main"
           elif [ "${{ github.event_name }}" = "release" ]; then
-            # For releases, get all JS/CSS files (since we don't know what changed)
-            CHANGED_FILES=$(git ls-files | grep -E '\.(js|css)$' || true)
+            # For GitHub release events
+            CURRENT_TAG="${{ github.event.release.tag_name }}"
+          elif echo "${{ github.ref }}" | grep -q "^refs/tags/"; then
+            # For tag push events
+            CURRENT_TAG=$(echo "${{ github.ref }}" | sed 's/refs\/tags\///')
+          fi
+          
+          if [ -n "$CURRENT_TAG" ]; then
+            # For releases/tag pushes, compare with previous tag
+            echo "Current tag: $CURRENT_TAG"
+            
+            # Get previous tag (excluding current tag)
+            PREVIOUS_TAG=$(git tag --sort=-creatordate | grep -v "^$CURRENT_TAG$" | head -1 || echo "")
+            
+            if [ -z "$PREVIOUS_TAG" ]; then
+              echo "No previous tag found, purging all JS/CSS files"
+              CHANGED_FILES=$(git ls-files | grep -E '\.(js|css)$' || true)
+            else
+              echo "Previous tag: $PREVIOUS_TAG"
+              # Get files changed between previous tag and current tag
+              CHANGED_FILES=$(git diff --name-only --diff-filter=ACMR "$PREVIOUS_TAG" "$CURRENT_TAG" | grep -E '\.(js|css)$' || true)
+            fi
+            echo "Event: Release/Tag push"
           else
-            # For tag pushes or fallback, get all JS/CSS files
+            # Fallback: get all JS/CSS files
             CHANGED_FILES=$(git ls-files | grep -E '\.(js|css)$' || true)
+            echo "Event: Fallback (unknown event type)"
           fi
           
           if [ -z "$CHANGED_FILES" ]; then
@@ -47,18 +75,96 @@ jobs:
       - name: Purge jsDelivr cache for changed files
         if: steps.changed_files.outputs.files != ''
         run: |
+          # Function to purge with retry logic
+          purge_with_retry() {
+            local url=$1
+            local file=$2
+            local max_retries=3
+            local retry_delay=2
+            local attempt=1
+            
+            while [ $attempt -le $max_retries ]; do
+              echo "Attempt $attempt/$max_retries: Purging $file"
+              
+              # Make the purge request
+              response=$(curl -s -w "\n%{http_code}" -X POST "$url" -H "Accept: application/json" 2>&1)
+              http_code=$(echo "$response" | tail -n1)
+              body=$(echo "$response" | sed '$d')
+              
+              # Check if successful (200 or 201)
+              if [ "$http_code" = "200" ] || [ "$http_code" = "201" ]; then
+                echo "✅ Successfully purged $file (HTTP $http_code)"
+                echo "$body" | head -c 300
+                echo ""
+                return 0
+              elif [ "$http_code" = "429" ]; then
+                # Rate limited - wait longer
+                echo "⚠️  Rate limited (HTTP 429), waiting ${retry_delay}s before retry..."
+                sleep $retry_delay
+                retry_delay=$((retry_delay * 2))  # Exponential backoff
+                attempt=$((attempt + 1))
+              elif [ "$http_code" = "503" ] || [ "$http_code" = "502" ]; then
+                # Service unavailable - retry
+                echo "⚠️  Service unavailable (HTTP $http_code), waiting ${retry_delay}s before retry..."
+                sleep $retry_delay
+                retry_delay=$((retry_delay * 2))
+                attempt=$((attempt + 1))
+              else
+                echo "❌ Failed to purge $file (HTTP $http_code)"
+                echo "$body" | head -c 300
+                echo ""
+                return 1
+              fi
+            done
+            
+            echo "❌ Failed to purge $file after $max_retries attempts"
+            return 1
+          }
+          
           FILES="${{ steps.changed_files.outputs.files }}"
+          PURGE_COUNT=0
+          FAILED_FILES=""
+          
           for file in $FILES; do
             if [ -f "$file" ]; then
-              echo "Purging cache for @main: $file"
-              curl -s -X POST "https://purge.jsdelivr.net/gh/pontuslagerberg/whiteswan@main/$file" | head -c 200 || true
               echo ""
+              echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+              echo "Processing: $file"
+              echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
               
-              echo "Purging cache for @latest: $file"
-              curl -s -X POST "https://purge.jsdelivr.net/gh/pontuslagerberg/whiteswan@latest/$file" | head -c 200 || true
-              echo ""
+              # Purge @main
+              if purge_with_retry "https://purge.jsdelivr.net/gh/pontuslagerberg/whiteswan@main/$file" "$file (@main)"; then
+                PURGE_COUNT=$((PURGE_COUNT + 1))
+              else
+                FAILED_FILES="$FAILED_FILES $file(@main)"
+              fi
+              
+              # Add delay between requests to avoid throttling
+              sleep 1
+              
+              # Purge @latest
+              if purge_with_retry "https://purge.jsdelivr.net/gh/pontuslagerberg/whiteswan@latest/$file" "$file (@latest)"; then
+                PURGE_COUNT=$((PURGE_COUNT + 1))
+              else
+                FAILED_FILES="$FAILED_FILES $file(@latest)"
+              fi
+              
+              # Add delay between files to avoid throttling
+              sleep 1
             fi
           done
+          
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "Purge Summary: $PURGE_COUNT successful"
+          if [ -n "$FAILED_FILES" ]; then
+            echo "Failed files:$FAILED_FILES"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            exit 1
+          else
+            echo "All purges completed successfully!"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          fi
 
       - name: Summary
         run: |
