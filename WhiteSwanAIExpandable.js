@@ -1,4 +1,5 @@
   (function () {
+    // White Swan AI Expandable Chat Integration
     var CSS_URL =
       "https://cdn.jsdelivr.net/gh/pontuslagerberg/whiteswan@latest/chat_expandable_embed.css";
     var PRO_EMBED_URL =
