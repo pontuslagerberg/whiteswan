@@ -226,71 +226,136 @@
 
 // ---- 4. Centralized iframeResize init for all tracked iframes ----
   function isChatIframe(el) {
-  if (!el || el.tagName !== 'IFRAME') return false;
-
-  // Adjust this list if you rename / add chat iframe variants
-  return (
-    el.classList.contains('ExpandableWhiteSwanAI')
-  );
-}
-
-function initResizer(resize) {
-  function runResize() {
-    const raw = filterResizables(getTrackedIframes());
-    const targets = raw.filter(
-      (el) =>
-        el &&
-        el.nodeType === 1 &&
-        el.tagName === 'IFRAME'
-    );
-
-    if (!targets.length) {
-      setTimeout(runResize, 50);
-      return;
-    }
-
-    console.log(
-      '[WhiteSwan Parent] Running iframeResize on targets:',
-      targets.map((el) => ({
-        id: el.id,
-        className: el.className,
-        src: el.src,
-      }))
-    );
-
-    targets.forEach((el) => {
-      const chat = isChatIframe(el);
-      const direction = chat ? 'both' : 'vertical';
-
-      try {
-        resize(
-          {
-            direction,
-            license: 'GPLv3',
-            checkOrigin: false, 
-          },
-          el
-        );
-        el.dataset.wsIframeResized = 'true';
-      } catch (e) {
-        console.error(
-          '[WhiteSwan Parent] iframeResize failed for element:',
-          { id: el.id, className: el.className, src: el.src },
-          e
-        );
-      }
-    });
+    if (!el || el.tagName !== 'IFRAME') return false;
+    // Adjust this list if you rename / add chat iframe variants
+    return el.classList.contains('ExpandableWhiteSwanAI');
   }
 
-  window.WS_runIframeResizer = runResize;
-  runResize();
-}
+  function logIframeInfo(prefix, el) {
+    return {
+      msg: prefix,
+      id: el.id || '(no id)',
+      className: el.className || '(no class)',
+      src: (el.src || '').substring(0, 80),
+    };
+  }
 
-// ✅ Hook it up here:
-WS_iframeResizeReady(function (resize) {
-  console.log('[WhiteSwan Parent] Initializing iframeResizer via initResizer');
-  initResizer(resize);
-});
+  function initResizer(resize) {
+    // Track poll attempts for late-loading iframes
+    let pollCount = 0;
+    let consecutiveIdleCycles = 0;
+    const MAX_POLL_COUNT = 20; // ~10 seconds at 500ms intervals
+    const POLL_INTERVAL = 500;
+    const IDLE_CYCLES_TO_STOP = 6; // Stop after 3 seconds of no new iframes
+    let pollTimerId = null;
+
+    function runResize() {
+      const allTracked = getTrackedIframes();
+      const raw = filterResizables(allTracked);
+      const targets = raw.filter(
+        (el) => el && el.nodeType === 1 && el.tagName === 'IFRAME'
+      );
+
+      // Log discovery of all tracked iframes (including already-initialized)
+      if (allTracked.length > 0) {
+        console.log(
+          '[WhiteSwan Parent] Tracked iframes in DOM:',
+          allTracked.map((el) => ({
+            id: el.id || '(no id)',
+            className: el.className || '(no class)',
+            alreadyInitialized: el.dataset.wsIframeResized === 'true',
+          }))
+        );
+      }
+
+      if (!targets.length) {
+        console.log('[WhiteSwan Parent] No new iframes to initialize this pass');
+        return;
+      }
+
+      console.log(
+        '[WhiteSwan Parent] Initializing iframeResize on:',
+        targets.map((el) => logIframeInfo('target', el))
+      );
+
+      targets.forEach((el) => {
+        // Double-check guard (defensive)
+        if (el.dataset.wsIframeResized === 'true') {
+          console.log('[WhiteSwan Parent] Skipping (already initialized):', logIframeInfo('skip', el));
+          return;
+        }
+
+        const chat = isChatIframe(el);
+        const direction = chat ? 'both' : 'vertical';
+
+        try {
+          resize(
+            {
+              direction,
+              license: 'GPLv3',
+              checkOrigin: false,
+              warningTimeout: 20000, // Give child 20s to respond before warning
+            },
+            el
+          );
+          el.dataset.wsIframeResized = 'true';
+          console.log('[WhiteSwan Parent] ✓ iframeResize attached:', logIframeInfo('attached', el));
+        } catch (e) {
+          console.error(
+            '[WhiteSwan Parent] iframeResize failed for element:',
+            logIframeInfo('error', el),
+            e
+          );
+        }
+      });
+    }
+
+    // Poll loop: catch late-loading iframes that MutationObserver might miss
+    // Lightweight: only queries DOM once per interval, stops early if idle
+    function pollForLateIframes() {
+      pollCount++;
+      const uninitialized = getTrackedIframes().filter(
+        (el) => el.dataset.wsIframeResized !== 'true'
+      );
+
+      if (uninitialized.length > 0) {
+        consecutiveIdleCycles = 0; // Reset idle counter
+        console.log(
+          '[WhiteSwan Parent] Poll #' + pollCount + ': found uninitialized iframe(s):',
+          uninitialized.map((el) => logIframeInfo('poll-found', el))
+        );
+        runResize();
+      } else {
+        consecutiveIdleCycles++;
+      }
+
+      // Stop polling after MAX_POLL_COUNT OR after IDLE_CYCLES_TO_STOP consecutive idle cycles
+      const shouldStop = pollCount >= MAX_POLL_COUNT || consecutiveIdleCycles >= IDLE_CYCLES_TO_STOP;
+      if (shouldStop) {
+        const reason = consecutiveIdleCycles >= IDLE_CYCLES_TO_STOP 
+          ? 'idle for ' + (consecutiveIdleCycles * POLL_INTERVAL / 1000) + 's'
+          : 'max polls reached';
+        console.log('[WhiteSwan Parent] Poll loop stopped (' + reason + ') after', pollCount, 'checks');
+        clearInterval(pollTimerId);
+        pollTimerId = null;
+      }
+    }
+
+    // Expose for MutationObserver and manual triggers
+    window.WS_runIframeResizer = runResize;
+
+    // Initial run
+    runResize();
+
+    // Start poll loop for late iframes
+    pollTimerId = setInterval(pollForLateIframes, POLL_INTERVAL);
+  }
+
+  // ✅ Hook it up here:
+  WS_iframeResizeReady(function (resize) {
+    console.log('[WhiteSwan Parent] iframeResizer library loaded - initializing');
+    initResizer(resize);
+  });
 
 
 // ---- 5. Watch for dynamically added iframes and resize them ----
@@ -304,8 +369,26 @@ WS_iframeResizeReady(function (resize) {
 
   const resizeWatcher = new MutationObserver(function (mutationList) {
     let shouldRun = false;
+    let triggerReason = '';
 
     for (const mutation of mutationList) {
+      // Handle attribute changes (e.g., class added to existing iframe)
+      if (mutation.type === 'attributes' && mutation.target) {
+        const node = mutation.target;
+        if (
+          node.nodeType === 1 &&
+          node.tagName === 'IFRAME' &&
+          node.matches &&
+          node.matches(frameSelector) &&
+          node.dataset.wsIframeResized !== 'true'
+        ) {
+          shouldRun = true;
+          triggerReason = 'attribute change on iframe: ' + (node.id || node.className || 'unknown');
+          break;
+        }
+      }
+
+      // Handle added nodes
       if (!mutation.addedNodes || !mutation.addedNodes.length) continue;
 
       mutation.addedNodes.forEach(function (node) {
@@ -316,20 +399,26 @@ WS_iframeResizeReady(function (resize) {
 
         // Direct match (the node itself is an iframe we care about)
         if (node.matches && node.matches(frameSelector)) {
-          if (!node.dataset.wsIframeResized) {
+          if (node.dataset.wsIframeResized !== 'true') {
             shouldRun = true;
+            triggerReason = 'new iframe added: ' + (node.id || node.className || 'unknown');
           }
           return;
         }
 
         // Or it contains one (e.g. a wrapper div with the iframe inside)
-        if (node.querySelector && node.querySelector(frameSelector)) {
-          shouldRun = true;
+        if (node.querySelector) {
+          const nested = node.querySelector(frameSelector);
+          if (nested && nested.dataset.wsIframeResized !== 'true') {
+            shouldRun = true;
+            triggerReason = 'nested iframe added: ' + (nested.id || nested.className || 'unknown');
+          }
         }
       });
     }
 
     if (shouldRun && window.WS_runIframeResizer) {
+      console.log('[WhiteSwan Parent] resizeWatcher triggered:', triggerReason);
       window.WS_runIframeResizer();
     }
   });
@@ -343,7 +432,10 @@ WS_iframeResizeReady(function (resize) {
     resizeWatcher.observe(document.body, {
       childList: true,
       subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'id'], // Watch for class/id changes on iframes
     });
+    console.log('[WhiteSwan Parent] resizeWatcher started - monitoring for new/changed iframes');
   }
 
   if (document.readyState === 'loading') {
