@@ -788,8 +788,10 @@
 
     // Volatile: re-evaluate on every style change
     applyFontClasses(el);
+    applySurfaceClasses(el);
+    applyDarkSurfaceClass(el);
 
-    // Stable classifications (link, surface): classify once, skip on re-runs
+    // Stable classifications: classify once on first run, skip on re-runs
     if (isFirstRun) {
       const linkResult = applyLinkClasses(el);
       if (linkResult) {
@@ -798,8 +800,6 @@
       } else {
         applyButtonClasses(el);
       }
-      applySurfaceClasses(el);
-      applyDarkSurfaceClass(el);
       applyToggleClass(el);
       applySeparatoClass(el);
       applySecondaryTextClass(el);
