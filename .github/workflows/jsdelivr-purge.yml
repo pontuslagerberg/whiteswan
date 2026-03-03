@@ -270,7 +270,8 @@ jobs:
           else
             FAILED_FILES="$FAILED_FILES @latest(metadata)"
           fi
-          sleep 5
+          # Wait for metadata to propagate across all CDN edge nodes before purging files
+          sleep 15
           
           for file in $FILES; do
             if [ -f "$file" ]; then
@@ -301,6 +302,17 @@ jobs:
             fi
           done
           
+          # Second metadata purge after files are cleared — ensures @latest version
+          # resolution sticks at CDN edge nodes that may have re-cached during file purges
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "Final @latest metadata re-purge"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          sleep 5
+          if purge_with_retry "/gh/pontuslagerberg/whiteswan@latest" "@latest metadata (final)"; then
+            PURGE_COUNT=$((PURGE_COUNT + 1))
+          fi
+
           echo ""
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "Purge Summary: $PURGE_COUNT successful"

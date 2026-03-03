@@ -213,10 +213,13 @@
   }
 
   function getInlineBgTokenOrRgb(el) {
-    const bgc = (el.style && el.style.backgroundColor) ? el.style.backgroundColor.trim() : "";
+    if (!el.style) return "";
+    // getPropertyValue returns the raw CSS text (including var() references).
+    // el.style.backgroundColor (IDL attribute) returns "" for CSS variable values.
+    const bgc = (el.style.getPropertyValue("background-color") || "").trim();
     if (bgc) return bgc;
 
-    const bg = (el.style && el.style.background) ? el.style.background.trim() : "";
+    const bg = (el.style.getPropertyValue("background") || "").trim();
     if (bg) {
       const m = bg.match(/(var\([^)]+\)|rgba?\([^)]+\))\s*$/);
       if (m) return m[1].trim();
