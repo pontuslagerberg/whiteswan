@@ -27,9 +27,24 @@ jobs:
       - name: Auto-create release on push to main
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          TAG="v$(date -u +%Y.%m.%d-%H%M%S)"
-          gh release create "$TAG" --title "$TAG" --generate-notes
-          echo "Created release: $TAG"
+          # Get the latest release tag and increment the patch version
+          LATEST_TAG=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' 2>/dev/null || echo "")
+          
+          if [ -z "$LATEST_TAG" ]; then
+            NEW_TAG="v1.0.0"
+          else
+            # Strip leading 'v', split into parts, increment patch
+            VERSION="${LATEST_TAG#v}"
+            MAJOR=$(echo "$VERSION" | cut -d. -f1)
+            MINOR=$(echo "$VERSION" | cut -d. -f2)
+            PATCH=$(echo "$VERSION" | cut -d. -f3)
+            # Handle non-numeric patch (e.g. timestamp tags) by resetting to 0
+            if ! echo "$PATCH" | grep -qE '^[0-9]+$'; then PATCH=0; fi
+            NEW_TAG="v${MAJOR}.${MINOR}.$((PATCH + 1))"
+          fi
+          
+          gh release create "$NEW_TAG" --title "$NEW_TAG" --generate-notes
+          echo "Created release: $NEW_TAG"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -244,6 +259,18 @@ jobs:
           FILES="${{ steps.changed_files.outputs.files }}"
           PURGE_COUNT=0
           FAILED_FILES=""
+
+          # Always purge the package-level @latest metadata first so jsDelivr
+          # re-resolves which version @latest maps to before we purge file paths
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "Purging @latest package metadata"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          if purge_with_retry "/gh/pontuslagerberg/whiteswan@latest" "@latest metadata"; then
+            PURGE_COUNT=$((PURGE_COUNT + 1))
+          else
+            FAILED_FILES="$FAILED_FILES @latest(metadata)"
+          fi
+          sleep 5
           
           for file in $FILES; do
             if [ -f "$file" ]; then
