@@ -66,18 +66,28 @@
       "var(--color_error_default)": "ws-btn--red",
       "var(--color_destructive_default)": "ws-btn--red",
       "var(--color_coegt_default)": "ws-btn--red",
+      "var(--color_primary_default)": "ws-btn--dark",
+      "var(--color_coDyS_default)": "ws-btn--gray",
+      "var(--color_coDKP_default)": "ws-btn--gray",
     },
 
     bgRgbToVariantClass: {
       "rgb(235, 235, 245)": "ws-btn--gray",
       "rgb(235,235,245)": "ws-btn--gray",
+      "rgba(32, 17, 57, 0.2)": "ws-btn--gray",
+      "rgba(32, 17, 57, 0.5)": "ws-btn--gray",
       "rgb(254, 205, 185)": "ws-btn--orange",
       "rgb(32, 17, 57)": "ws-btn--dark",
+      "rgb(122, 255, 195)": "ws-btn--green",
+      "rgb(231, 110, 116)": "ws-btn--red",
+      "rgb(193, 91, 96)": "ws-btn--red",
     },
 
     // CSS var substrings → button variant (for vars used inside rgba() etc.)
     bgVarSubstringToClass: {
       "--color_cofrq_default": "ws-btn--yellow",
+      "--color_codys_default": "ws-btn--gray",
+      "--color_codkp_default": "ws-btn--gray",
     },
 
     brightSurface: {
@@ -104,7 +114,9 @@
       tokens: [
         "var(--color_codkp_default)",
       ],
-      rgb: [],
+      rgb: [
+        "rgba(32, 17, 57, 0.5)",
+      ],
     },
 
     clickableButtonSelector: ".clickable-element.bubble-element.Group, .clickable-element.bubble-element.Button, .bad-revision",
