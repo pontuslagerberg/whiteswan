@@ -15,12 +15,23 @@ on:
 jobs:
   purge-cache:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Fetch all history for tags
           ref: ${{ github.ref }}
+
+      - name: Auto-create release on push to main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          TAG="v$(date -u +%Y.%m.%d-%H%M%S)"
+          gh release create "$TAG" --title "$TAG" --generate-notes
+          echo "Created release: $TAG"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Get changed files
         id: changed_files
