@@ -32,6 +32,7 @@
       borderBottom: "ws-border-bottom",
       borderLeft: "ws-border-left",
       borderAll: "ws-border-all",
+      darkSurface: "ws-dark-surface",
     },
 
     linkColors: {
@@ -87,6 +88,15 @@
       rgb: [
         "rgb(255, 255, 255)",
         "rgb(235, 235, 245)",
+      ],
+    },
+
+    darkSurface: {
+      tokens: [
+        "var(--color_primary_default)",
+      ],
+      rgb: [
+        "rgb(32, 17, 57)",
       ],
     },
 
@@ -359,8 +369,15 @@
     return (isBold ? "B" : "") + (isLight ? "L" : "");
   }
 
+  function hasDescendantText(el) {
+    if (hasOwnTextNode(el)) return true;
+    return !!el.querySelector?.(".bubble-element.Text");
+  }
+
   function isButtonish(el) {
     if (el.tagName === "BUTTON") return true;
+    // Divs/Groups without any text content are never buttons (e.g. icon-only circles, image containers)
+    if (el.matches?.(".bubble-element.Group") && !hasDescendantText(el)) return false;
     if (el.matches?.(CFG.clickableButtonSelector)) return true;
     // Badge-like Groups: has visible border + non-transparent bg (pills, tags, badges)
     if (el.matches?.(".bubble-element.Group") && hasVisibleBorder(el) && !detectTransparency(el)) return true;
@@ -700,6 +717,23 @@
     );
   }
 
+  function applyDarkSurfaceClass(el) {
+    const bgToken = normalizeColor(getInlineBgTokenOrRgb(el));
+    if (!bgToken) {
+      el.classList.remove(CFG.classes.darkSurface);
+      return;
+    }
+
+    let isDark = CFG._darkBgSet.has(bgToken);
+
+    if (!isDark) {
+      const resolved = normalizeColor(getComputedStyle(el).backgroundColor);
+      isDark = CFG._darkBgSet.has(resolved);
+    }
+
+    el.classList.toggle(CFG.classes.darkSurface, isDark);
+  }
+
   function applyBorderClass(el) {
     const cs = getComputedStyle(el);
     const sides = [
@@ -765,6 +799,7 @@
         applyButtonClasses(el);
       }
       applySurfaceClasses(el);
+      applyDarkSurfaceClass(el);
       applyToggleClass(el);
       applySeparatoClass(el);
       applySecondaryTextClass(el);
@@ -835,6 +870,22 @@
     }
   }
 
+  function initDarkSurfaces() {
+    CFG._darkBgSet = new Set();
+
+    for (const rgb of CFG.darkSurface.rgb) {
+      CFG._darkBgSet.add(normalizeColor(rgb));
+    }
+
+    for (const token of CFG.darkSurface.tokens) {
+      CFG._darkBgSet.add(normalizeColor(token));
+      const varName = token.match(/var\(([^)]+)\)/)?.[1];
+      if (varName) {
+        CFG._darkBgSet.add(resolveCssVarToBg(varName));
+      }
+    }
+  }
+
   function initSecondaryTextColors() {
     CFG._secondaryTextColors = new Set();
 
@@ -863,6 +914,7 @@
     };
     buildNormalizedRgbMap();
     initBrightSurfaces();
+    initDarkSurfaces();
     initLinkColors();
     initSecondaryTextColors();
   }
