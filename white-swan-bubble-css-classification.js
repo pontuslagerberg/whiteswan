@@ -580,6 +580,12 @@
   function applySurfaceClasses(el) {
     const tag = el.tagName;
 
+    // Buttons are never surfaces — surface classes are for containers, not interactive elements
+    if (tag === "BUTTON" || isButtonish(el)) {
+      el.classList.remove(CFG.classes.surfaceBright);
+      return;
+    }
+
     // Inputs/textareas/selects are always bright surfaces
     if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") {
       el.classList.add(CFG.classes.surfaceBright);
@@ -733,6 +739,11 @@
   }
 
   function applyDarkSurfaceClass(el) {
+    if (el.tagName === "BUTTON" || isButtonish(el)) {
+      el.classList.remove(CFG.classes.darkSurface);
+      return;
+    }
+
     const bgToken = normalizeColor(getInlineBgTokenOrRgb(el));
     if (!bgToken) {
       el.classList.remove(CFG.classes.darkSurface);
