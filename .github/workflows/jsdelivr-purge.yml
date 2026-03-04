@@ -8,6 +8,10 @@ on:
       - '*.js'
       - '*.css'
 
+concurrency:
+  group: jsdelivr-purge
+  cancel-in-progress: true
+
 jobs:
   purge-cache:
     runs-on: ubuntu-latest
