@@ -580,8 +580,8 @@
   function applySurfaceClasses(el) {
     const tag = el.tagName;
 
-    // Buttons are never surfaces — surface classes are for containers, not interactive elements
-    if (tag === "BUTTON" || isButtonish(el)) {
+    // Buttons and separators are never surfaces
+    if (tag === "BUTTON" || isButtonish(el) || el.classList.contains(CFG.classes.separato)) {
       el.classList.remove(CFG.classes.surfaceBright);
       return;
     }
@@ -739,7 +739,7 @@
   }
 
   function applyDarkSurfaceClass(el) {
-    if (el.tagName === "BUTTON" || isButtonish(el)) {
+    if (el.tagName === "BUTTON" || isButtonish(el) || el.classList.contains(CFG.classes.separato)) {
       el.classList.remove(CFG.classes.darkSurface);
       return;
     }
@@ -814,6 +814,7 @@
 
     // Volatile: re-evaluate on every style change
     applyFontClasses(el);
+    applySeparatoClass(el);
     applySurfaceClasses(el);
     applyDarkSurfaceClass(el);
 
@@ -827,7 +828,6 @@
         applyButtonClasses(el);
       }
       applyToggleClass(el);
-      applySeparatoClass(el);
       applySecondaryTextClass(el);
       applyBorderClass(el);
     } else if (getFrozen(el, "is-link") === "1") {
