@@ -7,10 +7,6 @@ on:
     paths:
       - '*.js'
       - '*.css'
-    tags:
-      - '*'
-  release:
-    types: [published]
 
 jobs:
   purge-cache:
@@ -45,46 +41,18 @@ jobs:
           
           gh release create "$NEW_TAG" --title "$NEW_TAG" --generate-notes
           echo "Created release: $NEW_TAG"
+          echo "Waiting 30s for jsDelivr to index the new release..."
+          sleep 30
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Get changed files
         id: changed_files
         run: |
-          CURRENT_TAG=""
-          
-          if [ "${{ github.event_name }}" = "push" ] && [ -n "${{ github.event.before }}" ] && ! echo "${{ github.ref }}" | grep -q "^refs/tags/"; then
-            # For branch pushes, get files changed in this commit
+          if [ -n "${{ github.event.before }}" ]; then
             CHANGED_FILES=$(git diff --name-only --diff-filter=ACMR "${{ github.event.before }}" HEAD | grep -E '\.(js|css)$' || true)
-            echo "Event: Branch push to main"
-          elif [ "${{ github.event_name }}" = "release" ]; then
-            # For GitHub release events
-            CURRENT_TAG="${{ github.event.release.tag_name }}"
-          elif echo "${{ github.ref }}" | grep -q "^refs/tags/"; then
-            # For tag push events
-            CURRENT_TAG=$(echo "${{ github.ref }}" | sed 's/refs\/tags\///')
-          fi
-          
-          if [ -n "$CURRENT_TAG" ]; then
-            # For releases/tag pushes, compare with previous tag
-            echo "Current tag: $CURRENT_TAG"
-            
-            # Get previous tag (excluding current tag)
-            PREVIOUS_TAG=$(git tag --sort=-creatordate | grep -v "^$CURRENT_TAG$" | head -1 || echo "")
-            
-            if [ -z "$PREVIOUS_TAG" ]; then
-              echo "No previous tag found, purging all JS/CSS files"
-              CHANGED_FILES=$(git ls-files | grep -E '\.(js|css)$' || true)
-            else
-              echo "Previous tag: $PREVIOUS_TAG"
-              # Get files changed between previous tag and current tag
-              CHANGED_FILES=$(git diff --name-only --diff-filter=ACMR "$PREVIOUS_TAG" "$CURRENT_TAG" | grep -E '\.(js|css)$' || true)
-            fi
-            echo "Event: Release/Tag push"
           else
-            # Fallback: get all JS/CSS files
             CHANGED_FILES=$(git ls-files | grep -E '\.(js|css)$' || true)
-            echo "Event: Fallback (unknown event type)"
           fi
           
           if [ -z "$CHANGED_FILES" ]; then
@@ -93,7 +61,6 @@ jobs:
           else
             echo "Changed files:"
             echo "$CHANGED_FILES"
-            # Convert newlines to space-separated list
             FILES_LIST=$(echo "$CHANGED_FILES" | tr '\n' ' ')
             echo "files=$FILES_LIST" >> $GITHUB_OUTPUT
           fi
@@ -327,6 +294,40 @@ jobs:
             echo "✅ All purges completed successfully!"
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           fi
+
+      - name: Verify CDN is serving correct version
+        if: steps.changed_files.outputs.files != ''
+        run: |
+          # Get the expected latest tag
+          EXPECTED_TAG=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' 2>/dev/null || echo "")
+          EXPECTED_VERSION="${EXPECTED_TAG#v}"
+          
+          echo "Expected @latest version: $EXPECTED_VERSION"
+          
+          # Check what jsDelivr is actually serving
+          for attempt in 1 2 3; do
+            SERVED_VERSION=$(curl -sI "https://cdn.jsdelivr.net/gh/pontuslagerberg/whiteswan@latest/" \
+              | grep -i "x-jsd-version" | awk '{print $2}' | tr -d '\r')
+            echo "Attempt $attempt: CDN serving version $SERVED_VERSION"
+            
+            if [ "$SERVED_VERSION" = "$EXPECTED_VERSION" ]; then
+              echo "✅ CDN is serving the correct version"
+              break
+            fi
+            
+            if [ $attempt -lt 3 ]; then
+              echo "⚠️  Version mismatch, re-purging metadata and waiting..."
+              curl -s -X POST "https://purge.jsdelivr.net" \
+                -H "Content-Type: application/json" \
+                -d '{"path": ["/gh/pontuslagerberg/whiteswan@latest"]}' > /dev/null
+              sleep 20
+            else
+              echo "⚠️  CDN still on $SERVED_VERSION after $attempt attempts (expected $EXPECTED_VERSION)"
+              echo "   The CDN may take a few more minutes to update."
+            fi
+          done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Summary
         run: |

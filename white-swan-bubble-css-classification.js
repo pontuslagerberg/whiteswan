@@ -104,9 +104,11 @@
     darkSurface: {
       tokens: [
         "var(--color_primary_default)",
+        "var(--color_cnjbR0_default)",
       ],
       rgb: [
         "rgb(32, 17, 57)",
+        "rgba(21, 12, 37, 1)",
       ],
     },
 
@@ -580,8 +582,8 @@
   function applySurfaceClasses(el) {
     const tag = el.tagName;
 
-    // Buttons and separators are never surfaces
-    if (tag === "BUTTON" || isButtonish(el) || el.classList.contains(CFG.classes.separato)) {
+    // Buttons, separators, and Page elements are never surfaces
+    if (tag === "BUTTON" || isButtonish(el) || el.classList.contains(CFG.classes.separato) || el.classList.contains("Page")) {
       el.classList.remove(CFG.classes.surfaceBright);
       return;
     }
@@ -739,7 +741,7 @@
   }
 
   function applyDarkSurfaceClass(el) {
-    if (el.tagName === "BUTTON" || isButtonish(el) || el.classList.contains(CFG.classes.separato)) {
+    if (el.tagName === "BUTTON" || isButtonish(el) || el.classList.contains(CFG.classes.separato) || el.classList.contains("Page")) {
       el.classList.remove(CFG.classes.darkSurface);
       return;
     }
