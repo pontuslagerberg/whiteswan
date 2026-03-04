@@ -814,7 +814,13 @@
 
     // Volatile: re-evaluate on every style change
     applyFontClasses(el);
-    applySeparatoClass(el);
+
+    // Separato must be classified before surfaces (separators are excluded from surfaces).
+    // Runs once on first run; on subsequent runs the class is already present.
+    if (isFirstRun) {
+      applySeparatoClass(el);
+    }
+
     applySurfaceClasses(el);
     applyDarkSurfaceClass(el);
 
