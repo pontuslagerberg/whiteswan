@@ -588,8 +588,8 @@
   function applySurfaceClasses(el) {
     const tag = el.tagName;
 
-    // Buttons, separators, and Page elements are never surfaces
-    if (tag === "BUTTON" || isButtonish(el) || el.classList.contains(CFG.classes.separato) || el.classList.contains("Page")) {
+    // Separators and Page elements are never surfaces
+    if (el.classList.contains(CFG.classes.separato) || el.classList.contains("Page")) {
       el.classList.remove(CFG.classes.surfaceBright);
       return;
     }
@@ -747,7 +747,7 @@
   }
 
   function applyDarkSurfaceClass(el) {
-    if (el.tagName === "BUTTON" || isButtonish(el) || el.classList.contains(CFG.classes.separato) || el.classList.contains("Page")) {
+    if (el.classList.contains(CFG.classes.separato) || el.classList.contains("Page")) {
       el.classList.remove(CFG.classes.darkSurface);
       return;
     }
@@ -768,6 +768,7 @@
     el.classList.toggle(CFG.classes.darkSurface, isDark);
   }
 
+  // Currently used for border exclusion; kept for potential future input-specific logic
   const INPUT_SELECTOR = "input, textarea, select, .Input, .Dropdown, .MultiLineInput, .date_div, .picker__input, .PictureInput, .FileInput, .bubble-element.Checkbox, .easyrte-wrapper-bubble, .ql-container, .ql-snow, button.button_for_file_uploader";
 
   function isInputElement(el) {
