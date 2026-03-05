@@ -843,6 +843,11 @@
     // Volatile: re-evaluate on every style change
     applyFontClasses(el);
 
+    // Input elements must never carry border classes
+    if (isInputElement(el)) {
+      clearAllBorderClasses(el);
+    }
+
     // Separato must be classified before surfaces (separators are excluded from surfaces).
     // Runs once on first run; on subsequent runs the class is already present.
     if (isFirstRun) {
