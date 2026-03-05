@@ -773,7 +773,7 @@
   }
 
   function applyExpandableInputClass(el) {
-    // A .input container that has a native <input> inside it is an expandable input (custom dropdown)
+    if (el.classList.contains(CFG.classes.inputExpandable)) return;
     if (el.classList.contains("input") && el.querySelector?.("input")) {
       el.classList.add(CFG.classes.inputExpandable);
     }
@@ -870,6 +870,7 @@
 
     applySurfaceClasses(el);
     applyDarkSurfaceClass(el);
+    applyExpandableInputClass(el);
 
     // Stable classifications: classify once on first run, skip on re-runs
     if (isFirstRun) {
@@ -881,7 +882,6 @@
         applyButtonClasses(el);
       }
       applyToggleClass(el);
-      applyExpandableInputClass(el);
       applySecondaryTextClass(el);
       applyBorderClass(el);
     } else if (getFrozen(el, "is-link") === "1") {
