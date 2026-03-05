@@ -766,7 +766,29 @@
     el.classList.toggle(CFG.classes.darkSurface, isDark);
   }
 
+  const INPUT_SELECTOR = "input, textarea, select, .Input, .Dropdown, .MultiLineInput, .date_div, .picker__input, .PictureInput, .FileInput, .bubble-element.Checkbox, .easyrte-wrapper-bubble, .ql-container, .ql-snow, button.button_for_file_uploader";
+
+  function isInputElement(el) {
+    return el.matches?.(INPUT_SELECTOR);
+  }
+
+  function clearAllBorderClasses(el) {
+    el.classList.remove(
+      CFG.classes.border,
+      CFG.classes.borderTop,
+      CFG.classes.borderRight,
+      CFG.classes.borderBottom,
+      CFG.classes.borderLeft,
+      CFG.classes.borderAll
+    );
+  }
+
   function applyBorderClass(el) {
+    if (isInputElement(el)) {
+      clearAllBorderClasses(el);
+      return;
+    }
+
     const cs = getComputedStyle(el);
     const sides = [
       { key: "top", cls: CFG.classes.borderTop },
