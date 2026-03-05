@@ -142,6 +142,7 @@
       ".bubble-element[class*='MultiFileInput']",
       ".dz-message",
       ".bubble-element.Group",
+      ".bubble-element.GroupFocus",
       ".bubble-element.group-item",
       ".bubble-element.CustomElement",
       ".bubble-element.Popup",
