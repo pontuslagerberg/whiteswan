@@ -772,7 +772,7 @@
   }
 
   // Currently used for border exclusion; kept for potential future input-specific logic
-  const INPUT_SELECTOR = "input, textarea, select, .Input, .Dropdown, .MultiLineInput, .date_div, .picker__input, .PictureInput, .FileInput, .bubble-element.Checkbox, .easyrte-wrapper-bubble, .ql-container, .ql-snow, button.button_for_file_uploader";
+  const INPUT_SELECTOR = "input, textarea, select, .input, .Input, .Dropdown, .MultiLineInput, .date_div, .picker__input, .PictureInput, .FileInput, .bubble-element.Checkbox, .easyrte-wrapper-bubble, .ql-container, .ql-snow, button.button_for_file_uploader";
 
   function isInputElement(el) {
     return el.matches?.(INPUT_SELECTOR);
