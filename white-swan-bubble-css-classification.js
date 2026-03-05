@@ -399,10 +399,12 @@
   function isButtonish(el) {
     if (el.classList.contains("input")) return false;
     if (el.tagName === "BUTTON") return true;
+    // Only clickable elements can be buttons — Bubble marks these with the clickable-element class
+    if (!el.classList.contains("clickable-element") && el.tagName !== "BUTTON") return false;
     // Divs/Groups without any text content are never buttons (e.g. icon-only circles, image containers)
     if (el.matches?.(".bubble-element.Group") && !hasDescendantText(el)) return false;
     if (el.matches?.(CFG.clickableButtonSelector)) return true;
-    // Badge-like Groups: has visible border + non-transparent bg (pills, tags, badges)
+    // Badge-like clickable Groups: has visible border + non-transparent bg (pills, tags, badges)
     if (el.matches?.(".bubble-element.Group") && hasVisibleBorder(el) && !detectTransparency(el)) return true;
     return false;
   }
@@ -588,8 +590,8 @@
   function applySurfaceClasses(el) {
     const tag = el.tagName;
 
-    // Separators and Page elements are never surfaces
-    if (el.classList.contains(CFG.classes.separato) || el.classList.contains("Page")) {
+    // Buttons, separators, and Page elements are never surfaces
+    if (tag === "BUTTON" || isButtonish(el) || el.classList.contains(CFG.classes.separato) || el.classList.contains("Page")) {
       el.classList.remove(CFG.classes.surfaceBright);
       return;
     }
@@ -747,7 +749,7 @@
   }
 
   function applyDarkSurfaceClass(el) {
-    if (el.classList.contains(CFG.classes.separato) || el.classList.contains("Page")) {
+    if (el.tagName === "BUTTON" || isButtonish(el) || el.classList.contains(CFG.classes.separato) || el.classList.contains("Page")) {
       el.classList.remove(CFG.classes.darkSurface);
       return;
     }
