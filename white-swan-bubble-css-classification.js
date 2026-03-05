@@ -397,6 +397,7 @@
   }
 
   function isButtonish(el) {
+    if (el.classList.contains("input")) return false;
     if (el.tagName === "BUTTON") return true;
     // Divs/Groups without any text content are never buttons (e.g. icon-only circles, image containers)
     if (el.matches?.(".bubble-element.Group") && !hasDescendantText(el)) return false;
