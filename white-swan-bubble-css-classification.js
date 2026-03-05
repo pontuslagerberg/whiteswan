@@ -33,6 +33,7 @@
       borderLeft: "ws-border-left",
       borderAll: "ws-border-all",
       darkSurface: "ws-dark-surface",
+      inputExpandable: "ws-input-expandable",
     },
 
     linkColors: {
@@ -771,6 +772,13 @@
     el.classList.toggle(CFG.classes.darkSurface, isDark);
   }
 
+  function applyExpandableInputClass(el) {
+    // A .input container that has a native <input> inside it is an expandable input (custom dropdown)
+    if (el.classList.contains("input") && el.querySelector?.("input")) {
+      el.classList.add(CFG.classes.inputExpandable);
+    }
+  }
+
   // Currently used for border exclusion; kept for potential future input-specific logic
   const INPUT_SELECTOR = "input, textarea, select, .input, .Input, .Dropdown, .MultiLineInput, .date_div, .picker__input, .PictureInput, .FileInput, .bubble-element.Checkbox, .easyrte-wrapper-bubble, .ql-container, .ql-snow, button.button_for_file_uploader";
 
@@ -873,6 +881,7 @@
         applyButtonClasses(el);
       }
       applyToggleClass(el);
+      applyExpandableInputClass(el);
       applySecondaryTextClass(el);
       applyBorderClass(el);
     } else if (getFrozen(el, "is-link") === "1") {
