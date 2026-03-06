@@ -1067,7 +1067,29 @@
     schedule(document.body);
   }
 
-  window.WSClassifier = { start, stop, rescan, refreshTheme };
+  const _styleEls = {};
+  function injectCSS(css, id) {
+    const key = id || "ws-theme";
+    let el = _styleEls[key];
+    if (!el) {
+      el = document.createElement("style");
+      el.id = key;
+      document.body.appendChild(el);
+      _styleEls[key] = el;
+    }
+    el.textContent = css;
+  }
+
+  function removeCSS(id) {
+    const key = id || "ws-theme";
+    const el = _styleEls[key];
+    if (el) {
+      el.remove();
+      delete _styleEls[key];
+    }
+  }
+
+  window.WSClassifier = { start, stop, rescan, refreshTheme, injectCSS, removeCSS };
 })();
 
 WSClassifier.start();
