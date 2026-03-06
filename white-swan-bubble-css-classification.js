@@ -1067,6 +1067,15 @@
     schedule(document.body);
   }
 
+  function sanitizeCSS(css) {
+    return css
+      .replace(/[\u201C\u201D\u201E\u201F\u2033\u2036]/g, '"')
+      .replace(/[\u2018\u2019\u201A\u201B\u2032\u2035]/g, "'")
+      .replace(/\u00A0/g, " ")
+      .replace(/[\u200B-\u200D\uFEFF]/g, "")
+      .replace(/[\u2013\u2014]/g, "-");
+  }
+
   const _styleEls = {};
   function injectCSS(css, id) {
     const key = id || "ws-theme";
@@ -1077,7 +1086,7 @@
       document.body.appendChild(el);
       _styleEls[key] = el;
     }
-    el.textContent = css;
+    el.textContent = sanitizeCSS(css);
   }
 
   function removeCSS(id) {
