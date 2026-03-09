@@ -532,9 +532,18 @@
   }
 
   function getOriginalColor(el) {
-    let color = normalizeColor(el.style?.color);
-    if (color && !color.startsWith("var(")) return { color, usedComputed: false };
+    // Use getPropertyValue to capture CSS variable tokens that el.style.color misses
+    const raw = (el.style?.getPropertyValue?.("color") || "").trim();
+    if (raw) {
+      const normalized = normalizeColor(raw);
+      if (normalized && !normalized.startsWith("var(")) {
+        return { color: normalized, usedComputed: false };
+      }
+      // CSS variable token -- return it directly so it can match token sets
+      if (normalized) return { color: normalized, usedComputed: false };
+    }
 
+    // No inline color: strip our classes to read Bubble's original computed color
     const hadBold = el.classList.contains(CFG.classes.fontBold);
     const hadLight = el.classList.contains(CFG.classes.fontLight);
     const hadLink = el.classList.contains(CFG.classes.link);
@@ -543,7 +552,7 @@
     el.classList.remove(CFG.classes.fontBold, CFG.classes.fontLight,
                         CFG.classes.link, CFG.classes.linkDestructive, CFG.classes.linkNormal);
 
-    color = normalizeColor(getComputedStyle(el).color);
+    const color = normalizeColor(getComputedStyle(el).color);
 
     if (hadBold) el.classList.add(CFG.classes.fontBold);
     if (hadLight) el.classList.add(CFG.classes.fontLight);
