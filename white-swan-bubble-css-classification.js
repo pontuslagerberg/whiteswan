@@ -35,6 +35,7 @@
       darkSurface: "ws-dark-surface",
       surfaceBrightContent: "ws-surface-bright-content",
       darkSurfaceContent: "ws-dark-surface-content",
+      input: "ws-input",
       inputExpandable: "ws-input-expandable",
     },
 
@@ -621,9 +622,9 @@
       return;
     }
 
-    // Only classify elements that explicitly set a background
+    // Only classify elements that explicitly set a non-transparent background
     const bgToken = normalizeColor(getInlineBgTokenOrRgb(el));
-    if (!bgToken) {
+    if (!bgToken || isTransparentColor(bgToken)) {
       el.classList.remove(CFG.classes.surfaceBright);
       return;
     }
@@ -633,7 +634,9 @@
     // For CSS vars or unrecognized values, resolve to RGB and recheck
     if (!isBright) {
       const resolved = normalizeColor(getComputedStyle(el).backgroundColor);
-      isBright = CFG._brightBgSet.has(resolved);
+      if (!isTransparentColor(resolved)) {
+        isBright = CFG._brightBgSet.has(resolved);
+      }
     }
 
     el.classList.toggle(CFG.classes.surfaceBright, isBright);
@@ -766,7 +769,7 @@
     }
 
     const bgToken = normalizeColor(getInlineBgTokenOrRgb(el));
-    if (!bgToken) {
+    if (!bgToken || isTransparentColor(bgToken)) {
       el.classList.remove(CFG.classes.darkSurface);
       return;
     }
@@ -775,7 +778,9 @@
 
     if (!isDark) {
       const resolved = normalizeColor(getComputedStyle(el).backgroundColor);
-      isDark = CFG._darkBgSet.has(resolved);
+      if (!isTransparentColor(resolved)) {
+        isDark = CFG._darkBgSet.has(resolved);
+      }
     }
 
     el.classList.toggle(CFG.classes.darkSurface, isDark);
@@ -830,8 +835,13 @@
     );
   }
 
+  function isButtonElement(el) {
+    return el.tagName === "BUTTON" || isButtonish(el) ||
+           el.classList.contains(CFG.classes.btn);
+  }
+
   function applyBorderClass(el) {
-    if (isInputElement(el)) {
+    if (isInputElement(el) || isButtonElement(el)) {
       clearAllBorderClasses(el);
       return;
     }
@@ -891,8 +901,11 @@
       // Volatile: re-evaluate on every style change
       applyFontClasses(el);
 
-      // Input elements must never carry border classes
+      // Inputs and buttons must never carry border classes
       if (isInputElement(el)) {
+        el.classList.add(CFG.classes.input);
+        clearAllBorderClasses(el);
+      } else if (isButtonElement(el)) {
         clearAllBorderClasses(el);
       }
 
@@ -954,14 +967,14 @@
     CFG._brightBgSet = new Set();
 
     for (const rgb of CFG.brightSurface.rgb) {
-      CFG._brightBgSet.add(normalizeColor(rgb));
+      addNonTransparent(CFG._brightBgSet, rgb);
     }
 
     for (const token of CFG.brightSurface.tokens) {
-      CFG._brightBgSet.add(normalizeColor(token));
+      addNonTransparent(CFG._brightBgSet, token);
       const varName = token.match(/var\(([^)]+)\)/)?.[1];
       if (varName) {
-        CFG._brightBgSet.add(resolveCssVarToBg(varName));
+        addNonTransparent(CFG._brightBgSet, resolveCssVarToBg(varName));
       }
     }
   }
@@ -989,18 +1002,23 @@
     }
   }
 
+  function addNonTransparent(set, color) {
+    const c = normalizeColor(color);
+    if (c && !isTransparentColor(c)) set.add(c);
+  }
+
   function initDarkSurfaces() {
     CFG._darkBgSet = new Set();
 
     for (const rgb of CFG.darkSurface.rgb) {
-      CFG._darkBgSet.add(normalizeColor(rgb));
+      addNonTransparent(CFG._darkBgSet, rgb);
     }
 
     for (const token of CFG.darkSurface.tokens) {
-      CFG._darkBgSet.add(normalizeColor(token));
+      addNonTransparent(CFG._darkBgSet, token);
       const varName = token.match(/var\(([^)]+)\)/)?.[1];
       if (varName) {
-        CFG._darkBgSet.add(resolveCssVarToBg(varName));
+        addNonTransparent(CFG._darkBgSet, resolveCssVarToBg(varName));
       }
     }
   }
