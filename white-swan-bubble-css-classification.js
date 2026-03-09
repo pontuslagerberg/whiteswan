@@ -33,6 +33,8 @@
       borderLeft: "ws-border-left",
       borderAll: "ws-border-all",
       darkSurface: "ws-dark-surface",
+      surfaceBrightContent: "ws-surface-bright-content",
+      darkSurfaceContent: "ws-dark-surface-content",
       inputExpandable: "ws-input-expandable",
     },
 
@@ -772,6 +774,24 @@
     el.classList.toggle(CFG.classes.darkSurface, isDark);
   }
 
+  function applyContentSurfaceClasses(el) {
+    const hasBright = el.classList.contains(CFG.classes.surfaceBright);
+    const hasDark = el.classList.contains(CFG.classes.darkSurface);
+
+    if (!hasBright && !hasDark) {
+      el.classList.remove(CFG.classes.surfaceBrightContent, CFG.classes.darkSurfaceContent);
+      return;
+    }
+
+    const rect = el.getBoundingClientRect();
+    const meetsSize = rect.width >= 80 && rect.height >= 80;
+    const hasText = hasDescendantText(el);
+    const qualifies = meetsSize && hasText;
+
+    el.classList.toggle(CFG.classes.surfaceBrightContent, hasBright && qualifies);
+    el.classList.toggle(CFG.classes.darkSurfaceContent, hasDark && qualifies);
+  }
+
   function applyExpandableInputClass(el) {
     if (el.classList.contains(CFG.classes.inputExpandable)) return;
     if (el.classList.contains("input") && el.querySelector?.("input")) {
@@ -780,7 +800,7 @@
   }
 
   // Currently used for border exclusion; kept for potential future input-specific logic
-  const INPUT_SELECTOR = "input, textarea, select, .input, .Input, .Dropdown, .MultiLineInput, .date_div, .picker__input, .PictureInput, .FileInput, .bubble-element.Checkbox, .easyrte-wrapper-bubble, .ql-container, .ql-snow, button.button_for_file_uploader";
+  const INPUT_SELECTOR = "input, textarea, select, .input, .Input, .Dropdown, .MultiLineInput, .date_div, .picker__input, .PictureInput, .FileInput, .bubble-element.Checkbox, .easyrte-wrapper-bubble, .ql-container, .ql-snow, button.button_for_file_uploader, .ql-mention-list-container, .ql-mention-list, .ql-mention-list-item";
 
   function isInputElement(el) {
     return el.matches?.(INPUT_SELECTOR);
@@ -870,6 +890,7 @@
 
     applySurfaceClasses(el);
     applyDarkSurfaceClass(el);
+    applyContentSurfaceClasses(el);
     applyExpandableInputClass(el);
 
     // Stable classifications: classify once on first run, skip on re-runs
