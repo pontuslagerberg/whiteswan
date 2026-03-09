@@ -869,47 +869,52 @@
   function processOne(el) {
     const sig = buildInputSig(el);
     const prevSig = lastSig.get(el);
-    if (prevSig === sig) return;
-    lastSig.set(el, sig);
+    const sigChanged = prevSig !== sig;
+    if (sigChanged) lastSig.set(el, sig);
 
     const isFirstRun = prevSig === undefined;
 
-    // Volatile: re-evaluate on every style change
-    applyFontClasses(el);
+    if (sigChanged) {
+      // Volatile: re-evaluate on every style change
+      applyFontClasses(el);
 
-    // Input elements must never carry border classes
-    if (isInputElement(el)) {
-      clearAllBorderClasses(el);
+      // Input elements must never carry border classes
+      if (isInputElement(el)) {
+        clearAllBorderClasses(el);
+      }
+
+      // Separato must be classified before surfaces (separators are excluded from surfaces).
+      if (isFirstRun) {
+        applySeparatoClass(el);
+      }
+
+      applySurfaceClasses(el);
+      applyDarkSurfaceClass(el);
+      applyExpandableInputClass(el);
     }
 
-    // Separato must be classified before surfaces (separators are excluded from surfaces).
-    // Runs once on first run; on subsequent runs the class is already present.
-    if (isFirstRun) {
-      applySeparatoClass(el);
-    }
-
-    applySurfaceClasses(el);
-    applyDarkSurfaceClass(el);
+    // Content surface classes depend on dimensions which change independently of style
     applyContentSurfaceClasses(el);
-    applyExpandableInputClass(el);
 
-    // Stable classifications: classify once on first run, skip on re-runs
-    if (isFirstRun) {
-      const linkResult = applyLinkClasses(el);
-      if (linkResult) {
-        setFrozen(el, "is-link", "1");
-        clearAllButtonClasses(el);
+    if (sigChanged) {
+      // Stable classifications: classify once on first run, skip on re-runs
+      if (isFirstRun) {
+        const linkResult = applyLinkClasses(el);
+        if (linkResult) {
+          setFrozen(el, "is-link", "1");
+          clearAllButtonClasses(el);
+        } else {
+          applyButtonClasses(el);
+        }
+        applyToggleClass(el);
+        applySecondaryTextClass(el);
+        applyBorderClass(el);
+      } else if (getFrozen(el, "is-link") === "1") {
+        // Already classified as link — skip button re-evaluation
       } else {
+        // Buttons are volatile (hover, state changes)
         applyButtonClasses(el);
       }
-      applyToggleClass(el);
-      applySecondaryTextClass(el);
-      applyBorderClass(el);
-    } else if (getFrozen(el, "is-link") === "1") {
-      // Already classified as link — skip button re-evaluation
-    } else {
-      // Buttons are volatile (hover, state changes)
-      applyButtonClasses(el);
     }
   }
 
@@ -1026,6 +1031,7 @@
 
     if (!CFG._palette) initPalette();
     schedule(document.body);
+    setTimeout(() => schedule(document.body), 2000);
 
     mutationWatcher = new MutationObserver(onMutations);
     mutationWatcher.observe(document.body, {
