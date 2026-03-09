@@ -783,13 +783,19 @@
       return;
     }
 
+    // Once qualified, keep the class (sticky) so collapsing doesn't flicker
+    if (hasBright && el.classList.contains(CFG.classes.surfaceBrightContent)) return;
+    if (hasDark && el.classList.contains(CFG.classes.darkSurfaceContent)) return;
+
     const rect = el.getBoundingClientRect();
-    const meetsSize = rect.width >= 80 && rect.height >= 80;
+    const meetsSize = rect.width >= 80 && rect.height >= 48;
     const hasText = hasDescendantText(el);
     const qualifies = meetsSize && hasText;
 
-    el.classList.toggle(CFG.classes.surfaceBrightContent, hasBright && qualifies);
-    el.classList.toggle(CFG.classes.darkSurfaceContent, hasDark && qualifies);
+    if (qualifies) {
+      el.classList.toggle(CFG.classes.surfaceBrightContent, hasBright);
+      el.classList.toggle(CFG.classes.darkSurfaceContent, hasDark);
+    }
   }
 
   function applyExpandableInputClass(el) {
