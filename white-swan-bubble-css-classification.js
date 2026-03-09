@@ -531,15 +531,42 @@
     return "BTN:" + (mapped || "none") + ":";
   }
 
+  function getOriginalColor(el) {
+    let color = normalizeColor(el.style?.color);
+    if (color && !color.startsWith("var(")) return { color, usedComputed: false };
+
+    const hadBold = el.classList.contains(CFG.classes.fontBold);
+    const hadLight = el.classList.contains(CFG.classes.fontLight);
+    const hadLink = el.classList.contains(CFG.classes.link);
+    const hadLinkD = el.classList.contains(CFG.classes.linkDestructive);
+    const hadLinkN = el.classList.contains(CFG.classes.linkNormal);
+    el.classList.remove(CFG.classes.fontBold, CFG.classes.fontLight,
+                        CFG.classes.link, CFG.classes.linkDestructive, CFG.classes.linkNormal);
+
+    color = normalizeColor(getComputedStyle(el).color);
+
+    if (hadBold) el.classList.add(CFG.classes.fontBold);
+    if (hadLight) el.classList.add(CFG.classes.fontLight);
+    if (hadLink) el.classList.add(CFG.classes.link);
+    if (hadLinkD) el.classList.add(CFG.classes.linkDestructive);
+    if (hadLinkN) el.classList.add(CFG.classes.linkNormal);
+
+    return { color, usedComputed: true };
+  }
+
   function applyLinkClasses(el) {
-    const hasInlineColor = !!(el.style?.color || "").trim();
     const frozenIsLink = getFrozen(el, "link");
-    if (frozenIsLink === "1" && !hasInlineColor) {
+    if (frozenIsLink === "1") {
       el.classList.add(CFG.classes.link);
-      const frozenDestr = getFrozen(el, "link-destructive");
-      const frozenNormal = getFrozen(el, "link-normal");
-      el.classList.toggle(CFG.classes.linkDestructive, frozenDestr === "1");
-      el.classList.toggle(CFG.classes.linkNormal, frozenNormal === "1");
+
+      const { color } = getOriginalColor(el);
+      const isDestructive = CFG._destructiveLinkColors && CFG._destructiveLinkColors.has(color);
+      const isNormal = !isDestructive && CFG._normalLinkColors && CFG._normalLinkColors.has(color);
+
+      el.classList.toggle(CFG.classes.linkDestructive, isDestructive);
+      el.classList.toggle(CFG.classes.linkNormal, isNormal);
+      setFrozen(el, "link-destructive", isDestructive ? "1" : "0");
+      setFrozen(el, "link-normal", isNormal ? "1" : "0");
       return "LINK:*";
     }
 
@@ -562,8 +589,7 @@
         border.includes("none") ||
         (!borderStyle && !border);
 
-      let c = normalizeColor(el.style?.color);
-      if (!c || c.startsWith("var(")) c = normalizeColor(getComputedStyle(el).color);
+      const { color: c } = getOriginalColor(el);
 
       const looksLikeLinkColor =
         (CFG._normalLinkColors && CFG._normalLinkColors.has(c)) ||
@@ -579,19 +605,14 @@
 
     el.classList.add(CFG.classes.link);
 
-    let color = normalizeColor(el.style?.color);
-    let usedComputed = false;
-    if (!color || color.startsWith("var(")) {
-      color = normalizeColor(getComputedStyle(el).color);
-      usedComputed = true;
-    }
+    const { color, usedComputed } = getOriginalColor(el);
 
     const isDestructive = CFG._destructiveLinkColors && CFG._destructiveLinkColors.has(color);
     const isNormal = !isDestructive && CFG._normalLinkColors && CFG._normalLinkColors.has(color);
 
     freezeIfComputed(el, "link", "1", usedComputed);
-    freezeIfComputed(el, "link-destructive", isDestructive ? "1" : "0", usedComputed);
-    freezeIfComputed(el, "link-normal", isNormal ? "1" : "0", usedComputed);
+    setFrozen(el, "link-destructive", isDestructive ? "1" : "0");
+    setFrozen(el, "link-normal", isNormal ? "1" : "0");
 
     el.classList.toggle(CFG.classes.linkDestructive, isDestructive);
     el.classList.toggle(CFG.classes.linkNormal, isNormal);
