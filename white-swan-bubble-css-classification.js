@@ -37,6 +37,7 @@
       darkSurfaceContent: "ws-dark-surface-content",
       input: "ws-input",
       inputExpandable: "ws-input-expandable",
+      destructiveText: "ws-destructive-text",
     },
 
     linkColors: {
@@ -629,6 +630,16 @@
     return "LINK:" + (isDestructive ? "D" : isNormal ? "N" : "P") + (isButtonLink ? ":B" : isAnchor ? ":A" : ":T");
   }
 
+  function applyDestructiveTextClass(el) {
+    if (el.classList.contains(CFG.classes.link)) {
+      el.classList.remove(CFG.classes.destructiveText);
+      return;
+    }
+    const { color } = getOriginalColor(el);
+    const isDestructive = CFG._destructiveLinkColors && CFG._destructiveLinkColors.has(color);
+    el.classList.toggle(CFG.classes.destructiveText, isDestructive);
+  }
+
   function applySurfaceClasses(el) {
     const tag = el.tagName;
 
@@ -971,6 +982,7 @@
         // Buttons are volatile (hover, state changes)
         applyButtonClasses(el);
       }
+      applyDestructiveTextClass(el);
     }
   }
 
