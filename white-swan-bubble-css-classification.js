@@ -290,13 +290,15 @@
   }
 
   // ====== FREEZE HELPERS ======
+  const FROZEN_PREFIX = "data-wsc-";
+
   function getFrozen(el, key) {
-    return el.getAttribute("data-ws-" + key) || "";
+    return el.getAttribute(FROZEN_PREFIX + key) || "";
   }
 
   function setFrozen(el, key, value) {
-    if (value === "" || value == null) el.removeAttribute("data-ws-" + key);
-    else el.setAttribute("data-ws-" + key, String(value));
+    if (value === "" || value == null) el.removeAttribute(FROZEN_PREFIX + key);
+    else el.setAttribute(FROZEN_PREFIX + key, String(value));
   }
 
   function freezeIfComputed(el, key, value, usedComputed) {
@@ -344,23 +346,27 @@
   }
 
   function applyFontClasses(el) {
+    const hasInlineFont = !!(el.style?.fontFamily || "").trim();
     const frozen = getFrozen(el, "font");
-    if (frozen === "bold") {
-      el.classList.add(CFG.classes.fontBold);
-      el.classList.remove(CFG.classes.fontLight);
-      return "B*";
-    }
-    if (frozen === "light") {
-      el.classList.add(CFG.classes.fontLight);
-      el.classList.remove(CFG.classes.fontBold);
-      return "L*";
+    if (frozen && !hasInlineFont) {
+      if (frozen === "bold") {
+        el.classList.add(CFG.classes.fontBold);
+        el.classList.remove(CFG.classes.fontLight);
+        return "B*";
+      }
+      if (frozen === "light") {
+        el.classList.add(CFG.classes.fontLight);
+        el.classList.remove(CFG.classes.fontBold);
+        return "L*";
+      }
     }
 
     let ffRaw = el.style?.fontFamily || "";
     let fwRaw = el.style?.fontWeight || "";
 
     let usedComputed = false;
-    if (!ffRaw && !fwRaw) {
+    const ffIsVar = ffRaw.includes("var(");
+    if ((!ffRaw && !fwRaw) || ffIsVar) {
       const cs = getComputedStyle(el);
       ffRaw = cs.fontFamily || "";
       fwRaw = cs.fontWeight || "";
@@ -525,8 +531,9 @@
   }
 
   function applyLinkClasses(el) {
+    const hasInlineColor = !!(el.style?.color || "").trim();
     const frozenIsLink = getFrozen(el, "link");
-    if (frozenIsLink === "1") {
+    if (frozenIsLink === "1" && !hasInlineColor) {
       el.classList.add(CFG.classes.link);
       const frozenDestr = getFrozen(el, "link-destructive");
       const frozenNormal = getFrozen(el, "link-normal");
@@ -555,7 +562,7 @@
         (!borderStyle && !border);
 
       let c = normalizeColor(el.style?.color);
-      if (!c) c = normalizeColor(getComputedStyle(el).color);
+      if (!c || c.startsWith("var(")) c = normalizeColor(getComputedStyle(el).color);
 
       const looksLikeLinkColor =
         (CFG._normalLinkColors && CFG._normalLinkColors.has(c)) ||
@@ -573,7 +580,7 @@
 
     let color = normalizeColor(el.style?.color);
     let usedComputed = false;
-    if (!color) {
+    if (!color || color.startsWith("var(")) {
       color = normalizeColor(getComputedStyle(el).color);
       usedComputed = true;
     }
