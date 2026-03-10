@@ -735,9 +735,13 @@
       return;
     }
 
-    // Inputs/textareas/selects are always bright surfaces
+    // Inputs/textareas/selects are always bright surfaces (except hidden file inputs)
     if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") {
-      el.classList.add(CFG.classes.surfaceBright);
+      if (isHiddenFileInput(el)) {
+        el.classList.remove(CFG.classes.surfaceBright);
+      } else {
+        el.classList.add(CFG.classes.surfaceBright);
+      }
       return;
     }
 
@@ -967,8 +971,21 @@
   // Currently used for border exclusion; kept for potential future input-specific logic
   const INPUT_SELECTOR = "input, textarea, select, .input, .Input, .Dropdown, .MultiLineInput, .date_div, .picker__input, .PictureInput, .FileInput, .bubble-element.Checkbox, .easyrte-wrapper-bubble, .ql-container, .ql-snow, button.button_for_file_uploader, .ql-mention-list-container, .ql-mention-list, .ql-mention-list-item";
 
+  function isHiddenFileInput(el) {
+    return el.tagName === "INPUT" && el.type === "file" &&
+      getInlineValue(el, "opacity") === "0";
+  }
+
+  function isLinkStyledPictureInput(el) {
+    return el.classList.contains("PictureInput") &&
+      el.querySelector?.("[data-ws-is-link], .button_for_file_uploader[style*='background-color: transparent']");
+  }
+
   function isInputElement(el) {
-    return el.matches?.(INPUT_SELECTOR);
+    if (!el.matches?.(INPUT_SELECTOR)) return false;
+    if (isHiddenFileInput(el)) return false;
+    if (isLinkStyledPictureInput(el)) return false;
+    return true;
   }
 
   function clearAllBorderClasses(el) {
