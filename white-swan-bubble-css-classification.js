@@ -38,6 +38,7 @@
       input: "ws-input",
       inputExpandable: "ws-input-expandable",
       destructiveText: "ws-destructive-text",
+      transparentBg: "ws-transparent-bg",
       perpTopLeft: "ws-top-left-perpendicular",
       perpTopRight: "ws-top-right-perpendicular",
       perpBottomRight: "ws-bottom-right-perpendicular",
@@ -602,6 +603,10 @@
     const isClickable = el.classList.contains("clickable-element");
     const isTextLink = isClickable && el.matches?.(".bubble-element.Text");
 
+    const isChildOfLinkParent = !isTextLink && !isAnchor && !isButton &&
+      el.matches?.(".bubble-element.Text") &&
+      el.parentElement?.closest?.(".clickable-element.link-underline, .clickable-element.link-colored, a.clickable-element");
+
     let isButtonLink = false;
 
     if (isButton) {
@@ -624,7 +629,7 @@
       isButtonLink = isTransparent && borderNone && looksLikeLinkColor;
     }
 
-    if (!isTextLink && !isButtonLink && !isAnchor) {
+    if (!isTextLink && !isButtonLink && !isAnchor && !isChildOfLinkParent) {
       el.classList.remove(CFG.classes.link, CFG.classes.linkDestructive, CFG.classes.linkNormal);
       return "";
     }
@@ -643,7 +648,7 @@
     el.classList.toggle(CFG.classes.linkDestructive, isDestructive);
     el.classList.toggle(CFG.classes.linkNormal, isNormal);
 
-    return "LINK:" + (isDestructive ? "D" : isNormal ? "N" : "P") + (isButtonLink ? ":B" : isAnchor ? ":A" : ":T");
+    return "LINK:" + (isDestructive ? "D" : isNormal ? "N" : "P") + (isButtonLink ? ":B" : isAnchor ? ":A" : isChildOfLinkParent ? ":C" : ":T");
   }
 
   function applyDestructiveTextClass(el) {
@@ -816,6 +821,21 @@
     );
   }
 
+  function relativeLuminance(r, g, b) {
+    const sRGB = [r, g, b].map(c => {
+      c /= 255;
+      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * sRGB[0] + 0.7152 * sRGB[1] + 0.0722 * sRGB[2];
+  }
+
+  function isColorDark(colorStr) {
+    if (!colorStr) return false;
+    const m = colorStr.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+    if (!m) return false;
+    return relativeLuminance(+m[1], +m[2], +m[3]) < 0.2;
+  }
+
   function applyDarkSurfaceClass(el) {
     if (el.tagName === "BUTTON" || isButtonish(el) || el.classList.contains(CFG.classes.separato) || el.classList.contains("Page")) {
       el.classList.remove(CFG.classes.darkSurface);
@@ -833,7 +853,7 @@
     if (!isDark) {
       const resolved = normalizeColor(getComputedStyle(el).backgroundColor);
       if (!isTransparentColor(resolved)) {
-        isDark = CFG._darkBgSet.has(resolved);
+        isDark = CFG._darkBgSet.has(resolved) || isColorDark(resolved);
       }
     }
 
@@ -869,6 +889,10 @@
     if (el.classList.contains("input") && el.querySelector?.("input")) {
       el.classList.add(CFG.classes.inputExpandable);
     }
+  }
+
+  function applyTransparentBgClass(el) {
+    el.classList.toggle(CFG.classes.transparentBg, detectTransparency(el));
   }
 
   // Currently used for border exclusion; kept for potential future input-specific logic
@@ -1006,6 +1030,7 @@
 
       applySurfaceClasses(el);
       applyDarkSurfaceClass(el);
+      applyTransparentBgClass(el);
       applyExpandableInputClass(el);
       applyPerpendicularCorners(el);
     }
