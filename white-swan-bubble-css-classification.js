@@ -243,16 +243,55 @@
 
   // ====== STANDARDIZED STYLE READING ======
   //
-  // getInlineValue(el, prop)
-  //   Reads raw inline style via getPropertyValue (captures CSS variables).
-  //   Returns the raw token, e.g. "var(--color_destructive_default)" or "rgb(32, 17, 57)".
-  //   Use when you want to match against pre-saved token sets without resolving.
+  // Three tiers, checked in order:
   //
-  // getResolvedValue(el, prop, { clean })
-  //   Full pipeline: inline → if CSS variable or empty, resolve via computed.
-  //   clean=true: strips our override classes before reading computed, so we read
-  //   the platform's original value rather than our !important overrides.
-  //   Use for color and font-family which our CSS overrides via ws-font-bold, ws-link, etc.
+  // 1. getInlineValue(el, prop)
+  //    Reads raw inline style via getPropertyValue (captures CSS variables).
+  //    Use when you want to match against pre-saved token sets without resolving.
+  //
+  // 2. getBubbleRuleValue(el, prop)
+  //    Reads from Bubble's CSS rules (.b-root .bubble-element.{uniqueClass}).
+  //    These carry the designer's intended values from Bubble's editor, BEFORE
+  //    our whitelabeling CSS overrides them with !important.
+  //
+  // 3. Computed style (getComputedStyle)
+  //    Final fallback. Includes all CSS cascade including our overrides.
+  //    clean=true strips our classification classes to avoid reading our own overrides.
+  //
+  // getResolvedValue(el, prop, { clean }) runs all three tiers.
+
+  const _bubbleRuleCache = new Map();
+  let _bubbleRuleCacheBuilt = false;
+
+  function buildBubbleRuleCache() {
+    _bubbleRuleCache.clear();
+    for (const sheet of document.styleSheets) {
+      try {
+        const rules = sheet.cssRules || sheet.rules;
+        if (!rules) continue;
+        for (const rule of rules) {
+          if (!rule.selectorText) continue;
+          const m = rule.selectorText.match(
+            /\.b-root\s+\.bubble-element\.(\w+)\s*$/
+          );
+          if (m) _bubbleRuleCache.set(m[1], rule.style);
+        }
+      } catch (e) { /* cross-origin stylesheet */ }
+    }
+    _bubbleRuleCacheBuilt = true;
+  }
+
+  function getBubbleRuleValue(el, prop) {
+    if (!_bubbleRuleCacheBuilt) return "";
+    for (const cls of el.classList) {
+      const style = _bubbleRuleCache.get(cls);
+      if (style) {
+        const val = (style.getPropertyValue(prop) || "").trim();
+        if (val) return val;
+      }
+    }
+    return "";
+  }
 
   const OUR_OVERRIDE_CLASSES_LAZY = { value: null };
   function getOurOverrideClasses() {
@@ -275,6 +314,9 @@
     const inline = getInlineValue(el, prop);
     if (inline && !inline.startsWith("var(")) return inline;
 
+    const bubbleVal = !inline ? getBubbleRuleValue(el, prop) : "";
+    if (bubbleVal && !bubbleVal.startsWith("var(")) return bubbleVal;
+
     let had;
     if (clean) {
       const classes = getOurOverrideClasses();
@@ -291,7 +333,7 @@
     return computed;
   }
 
-  function getInlineBg(el) {
+  function getInlineOrBubbleBg(el) {
     const bgc = getInlineValue(el, "background-color");
     if (bgc) return bgc;
     const bg = getInlineValue(el, "background");
@@ -299,11 +341,18 @@
       const m = bg.match(/(var\([^)]+\)|rgba?\([^)]+\))\s*$/);
       if (m) return m[1].trim();
     }
+    const bubbleBgc = getBubbleRuleValue(el, "background-color");
+    if (bubbleBgc) return bubbleBgc;
+    const bubbleBg = getBubbleRuleValue(el, "background");
+    if (bubbleBg) {
+      const m = bubbleBg.match(/(var\([^)]+\)|rgba?\([^)]+\))\s*$/);
+      if (m) return m[1].trim();
+    }
     return "";
   }
 
   function getEffectiveBg(el) {
-    const inline = normalizeColor(getInlineBg(el));
+    const inline = normalizeColor(getInlineOrBubbleBg(el));
     if (inline) return inline;
     return normalizeColor(getComputedStyle(el).backgroundColor);
   }
@@ -536,7 +585,7 @@
 
     // Color mapping (only for non-transparent, non-gradient buttons)
     const bg = getEffectiveBg(el);
-    const bgToken = normalizeColor(getInlineBg(el));
+    const bgToken = normalizeColor(getInlineOrBubbleBg(el));
     const usedComputedBg = !bgToken;
     const p = CFG._palette;
     const rgbMap = CFG._normalizedRgbMap;
@@ -685,7 +734,7 @@
     }
 
     // Only classify elements that explicitly set a non-transparent background
-    const bgToken = normalizeColor(getInlineBg(el));
+    const bgToken = normalizeColor(getInlineOrBubbleBg(el));
     if (!bgToken || isTransparentColor(bgToken)) {
       el.classList.remove(CFG.classes.surfaceBright);
       return;
@@ -736,7 +785,7 @@
 
     const cs = getComputedStyle(el);
 
-    let bgToken = normalizeColor(getInlineBg(el));
+    let bgToken = normalizeColor(getInlineOrBubbleBg(el));
     if (!bgToken) {
       bgToken = normalizeColor(cs.backgroundColor);
     }
@@ -842,7 +891,7 @@
       return;
     }
 
-    const bgToken = normalizeColor(getInlineBg(el));
+    const bgToken = normalizeColor(getInlineOrBubbleBg(el));
     if (!bgToken || isTransparentColor(bgToken)) {
       el.classList.remove(CFG.classes.darkSurface);
       return;
@@ -1064,15 +1113,20 @@
   }
 
   function onMutations(mutations) {
+    let stylesAdded = false;
     for (const m of mutations) {
       if (m.type === "childList") {
         for (const n of m.addedNodes) {
-          if (n && n.nodeType === 1) schedule(n);
+          if (n && n.nodeType === 1) {
+            schedule(n);
+            if (n.tagName === "STYLE" || n.tagName === "LINK") stylesAdded = true;
+          }
         }
       } else if (m.type === "attributes") {
         schedule(m.target);
       }
     }
+    if (stylesAdded) buildBubbleRuleCache();
   }
 
   function buildNormalizedRgbMap() {
@@ -1179,9 +1233,13 @@
     if (running) return;
     running = true;
 
+    buildBubbleRuleCache();
     if (!CFG._palette) initPalette();
     schedule(document.body);
-    setTimeout(() => schedule(document.body), 2000);
+    setTimeout(() => {
+      buildBubbleRuleCache();
+      schedule(document.body);
+    }, 2000);
 
     mutationWatcher = new MutationObserver(onMutations);
     mutationWatcher.observe(document.body, {
