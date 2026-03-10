@@ -38,6 +38,10 @@
       input: "ws-input",
       inputExpandable: "ws-input-expandable",
       destructiveText: "ws-destructive-text",
+      perpTopLeft: "ws-top-left-perpendicular",
+      perpTopRight: "ws-top-right-perpendicular",
+      perpBottomRight: "ws-bottom-right-perpendicular",
+      perpBottomLeft: "ws-bottom-left-perpendicular",
     },
 
     linkColors: {
@@ -236,14 +240,60 @@
     return String(ff).replace(/["']/g, "").trim();
   }
 
-  function getInlineBgTokenOrRgb(el) {
-    if (!el.style) return "";
-    // getPropertyValue returns the raw CSS text (including var() references).
-    // el.style.backgroundColor (IDL attribute) returns "" for CSS variable values.
-    const bgc = (el.style.getPropertyValue("background-color") || "").trim();
-    if (bgc) return bgc;
+  // ====== STANDARDIZED STYLE READING ======
+  //
+  // getInlineValue(el, prop)
+  //   Reads raw inline style via getPropertyValue (captures CSS variables).
+  //   Returns the raw token, e.g. "var(--color_destructive_default)" or "rgb(32, 17, 57)".
+  //   Use when you want to match against pre-saved token sets without resolving.
+  //
+  // getResolvedValue(el, prop, { clean })
+  //   Full pipeline: inline → if CSS variable or empty, resolve via computed.
+  //   clean=true: strips our override classes before reading computed, so we read
+  //   the platform's original value rather than our !important overrides.
+  //   Use for color and font-family which our CSS overrides via ws-font-bold, ws-link, etc.
 
-    const bg = (el.style.getPropertyValue("background") || "").trim();
+  const OUR_OVERRIDE_CLASSES_LAZY = { value: null };
+  function getOurOverrideClasses() {
+    if (!OUR_OVERRIDE_CLASSES_LAZY.value) {
+      OUR_OVERRIDE_CLASSES_LAZY.value = [
+        CFG.classes.fontBold, CFG.classes.fontLight,
+        CFG.classes.link, CFG.classes.linkDestructive, CFG.classes.linkNormal,
+        CFG.classes.destructiveText, CFG.classes.btn,
+      ];
+    }
+    return OUR_OVERRIDE_CLASSES_LAZY.value;
+  }
+
+  function getInlineValue(el, prop) {
+    if (!el.style?.getPropertyValue) return "";
+    return (el.style.getPropertyValue(prop) || "").trim();
+  }
+
+  function getResolvedValue(el, prop, { clean = false } = {}) {
+    const inline = getInlineValue(el, prop);
+    if (inline && !inline.startsWith("var(")) return inline;
+
+    let had;
+    if (clean) {
+      const classes = getOurOverrideClasses();
+      had = classes.filter(c => el.classList.contains(c));
+      for (const c of had) el.classList.remove(c);
+    }
+
+    const computed = (getComputedStyle(el).getPropertyValue(prop) || "").trim();
+
+    if (clean && had) {
+      for (const c of had) el.classList.add(c);
+    }
+
+    return computed;
+  }
+
+  function getInlineBg(el) {
+    const bgc = getInlineValue(el, "background-color");
+    if (bgc) return bgc;
+    const bg = getInlineValue(el, "background");
     if (bg) {
       const m = bg.match(/(var\([^)]+\)|rgba?\([^)]+\))\s*$/);
       if (m) return m[1].trim();
@@ -252,7 +302,7 @@
   }
 
   function getEffectiveBg(el) {
-    const inline = normalizeColor(getInlineBgTokenOrRgb(el));
+    const inline = normalizeColor(getInlineBg(el));
     if (inline) return inline;
     return normalizeColor(getComputedStyle(el).backgroundColor);
   }
@@ -284,8 +334,8 @@
   }
 
   function hasVisibleBorder(el) {
-    const bs = (el.style?.borderStyle || "").trim().toLowerCase();
-    const bw = (el.style?.borderWidth || "").trim();
+    const bs = getInlineValue(el, "border-style").toLowerCase();
+    const bw = getInlineValue(el, "border-width");
     if (!bs || bs === "none" || bs === "hidden") return false;
     const w = parseFloat(bw);
     return Number.isFinite(w) && w > 0;
@@ -348,7 +398,7 @@
   }
 
   function applyFontClasses(el) {
-    const hasInlineFont = !!(el.style?.fontFamily || "").trim();
+    const hasInlineFont = !!getInlineValue(el, "font-family");
     const frozen = getFrozen(el, "font");
     if (frozen && !hasInlineFont) {
       if (frozen === "bold") {
@@ -363,17 +413,10 @@
       }
     }
 
-    let ffRaw = el.style?.fontFamily || "";
-    let fwRaw = el.style?.fontWeight || "";
+    let ffRaw = getResolvedValue(el, "font-family", { clean: true });
+    let fwRaw = getResolvedValue(el, "font-weight", { clean: true });
 
-    let usedComputed = false;
-    const ffIsVar = ffRaw.includes("var(");
-    if ((!ffRaw && !fwRaw) || ffIsVar) {
-      const cs = getComputedStyle(el);
-      ffRaw = cs.fontFamily || "";
-      fwRaw = cs.fontWeight || "";
-      usedComputed = true;
-    }
+    let usedComputed = !getInlineValue(el, "font-family");
 
     const ff = normalizeFontFamily(ffRaw).toLowerCase();
     const fw = String(fwRaw).trim().toLowerCase();
@@ -422,8 +465,8 @@
   }
 
   function detectTransparency(el) {
-    const bgRaw = (el.style?.background || "").trim().toLowerCase();
-    const bgcRaw = (el.style?.backgroundColor || "").trim().toLowerCase();
+    const bgRaw = getInlineValue(el, "background").toLowerCase();
+    const bgcRaw = getInlineValue(el, "background-color").toLowerCase();
 
     if (bgRaw === "none transparent" ||
         bgcRaw === "transparent" ||
@@ -431,16 +474,13 @@
       return true;
     }
 
-    // Check rgba alpha=0 on backgroundColor
     if (bgcRaw && isTransparentColor(normalizeColor(bgcRaw))) return true;
 
-    // Check rgba alpha=0 extracted from background shorthand
     if (bgRaw) {
       const rgbaMatch = bgRaw.match(/rgba?\([^)]+\)/);
       if (rgbaMatch && isTransparentColor(normalizeColor(rgbaMatch[0]))) return true;
     }
 
-    // Computed fallback only when no inline bg info at all
     if (!bgRaw && !bgcRaw) {
       return isTransparentColor(normalizeColor(getComputedStyle(el).backgroundColor));
     }
@@ -449,7 +489,7 @@
   }
 
   function hasGradientBg(el) {
-    const bg = (el.style?.background || "").toLowerCase();
+    const bg = getInlineValue(el, "background").toLowerCase();
     return bg.includes("linear-gradient") || bg.includes("radial-gradient");
   }
 
@@ -495,7 +535,7 @@
 
     // Color mapping (only for non-transparent, non-gradient buttons)
     const bg = getEffectiveBg(el);
-    const bgToken = normalizeColor(getInlineBgTokenOrRgb(el));
+    const bgToken = normalizeColor(getInlineBg(el));
     const usedComputedBg = !bgToken;
     const p = CFG._palette;
     const rgbMap = CFG._normalizedRgbMap;
@@ -510,7 +550,7 @@
 
     // CSS var substring matching (handles vars inside rgba(), etc.)
     if (!mapped) {
-      const bgStr = ((el.style?.backgroundColor || "") + (el.style?.background || "")).toLowerCase();
+      const bgStr = (getInlineValue(el, "background-color") + getInlineValue(el, "background")).toLowerCase();
       for (const [varSub, cls] of Object.entries(CFG.bgVarSubstringToClass)) {
         if (bgStr.includes(varSub)) { mapped = cls; break; }
       }
@@ -533,34 +573,10 @@
   }
 
   function getOriginalColor(el) {
-    // Use getPropertyValue to capture CSS variable tokens that el.style.color misses
-    const raw = (el.style?.getPropertyValue?.("color") || "").trim();
-    if (raw) {
-      const normalized = normalizeColor(raw);
-      if (normalized && !normalized.startsWith("var(")) {
-        return { color: normalized, usedComputed: false };
-      }
-      // CSS variable token -- return it directly so it can match token sets
-      if (normalized) return { color: normalized, usedComputed: false };
-    }
+    const inline = normalizeColor(getInlineValue(el, "color"));
+    if (inline) return { color: inline, usedComputed: false };
 
-    // No inline color: strip our classes to read Bubble's original computed color
-    const hadBold = el.classList.contains(CFG.classes.fontBold);
-    const hadLight = el.classList.contains(CFG.classes.fontLight);
-    const hadLink = el.classList.contains(CFG.classes.link);
-    const hadLinkD = el.classList.contains(CFG.classes.linkDestructive);
-    const hadLinkN = el.classList.contains(CFG.classes.linkNormal);
-    el.classList.remove(CFG.classes.fontBold, CFG.classes.fontLight,
-                        CFG.classes.link, CFG.classes.linkDestructive, CFG.classes.linkNormal);
-
-    const color = normalizeColor(getComputedStyle(el).color);
-
-    if (hadBold) el.classList.add(CFG.classes.fontBold);
-    if (hadLight) el.classList.add(CFG.classes.fontLight);
-    if (hadLink) el.classList.add(CFG.classes.link);
-    if (hadLinkD) el.classList.add(CFG.classes.linkDestructive);
-    if (hadLinkN) el.classList.add(CFG.classes.linkNormal);
-
+    const color = normalizeColor(getResolvedValue(el, "color", { clean: true }));
     return { color, usedComputed: true };
   }
 
@@ -591,8 +607,8 @@
     if (isButton) {
       const isTransparent = detectTransparency(el);
 
-      const borderStyle = (el.style?.borderStyle || "").trim().toLowerCase();
-      const border = (el.style?.border || "").trim().toLowerCase();
+      const borderStyle = getInlineValue(el, "border-style").toLowerCase();
+      const border = getInlineValue(el, "border").toLowerCase();
 
       const borderNone =
         borderStyle === "none" ||
@@ -664,7 +680,7 @@
     }
 
     // Only classify elements that explicitly set a non-transparent background
-    const bgToken = normalizeColor(getInlineBgTokenOrRgb(el));
+    const bgToken = normalizeColor(getInlineBg(el));
     if (!bgToken || isTransparentColor(bgToken)) {
       el.classList.remove(CFG.classes.surfaceBright);
       return;
@@ -715,7 +731,7 @@
 
     const cs = getComputedStyle(el);
 
-    let bgToken = normalizeColor(getInlineBgTokenOrRgb(el));
+    let bgToken = normalizeColor(getInlineBg(el));
     if (!bgToken) {
       bgToken = normalizeColor(cs.backgroundColor);
     }
@@ -788,10 +804,7 @@
       return;
     }
 
-    let color = normalizeColor(el.style?.color);
-    if (!color) {
-      color = normalizeColor(getComputedStyle(el).color);
-    }
+    const color = normalizeColor(getResolvedValue(el, "color", { clean: true }));
 
     const isSecondaryTokenOrResolved =
       CFG._secondaryTextColors && CFG._secondaryTextColors.has(color);
@@ -809,7 +822,7 @@
       return;
     }
 
-    const bgToken = normalizeColor(getInlineBgTokenOrRgb(el));
+    const bgToken = normalizeColor(getInlineBg(el));
     if (!bgToken || isTransparentColor(bgToken)) {
       el.classList.remove(CFG.classes.darkSurface);
       return;
@@ -919,15 +932,51 @@
     el.classList.toggle(CFG.classes.borderAll, paintedCount === 4);
   }
 
+  const PERP_CORNERS = [
+    { prop: "border-top-left-radius",     cls: "perpTopLeft" },
+    { prop: "border-top-right-radius",    cls: "perpTopRight" },
+    { prop: "border-bottom-right-radius", cls: "perpBottomRight" },
+    { prop: "border-bottom-left-radius",  cls: "perpBottomLeft" },
+  ];
+
+  function clearAllPerpClasses(el) {
+    for (const { cls } of PERP_CORNERS) el.classList.remove(CFG.classes[cls]);
+  }
+
+  function applyPerpendicularCorners(el) {
+    if (el.classList.contains(CFG.classes.separato)) {
+      clearAllPerpClasses(el);
+      return;
+    }
+
+    let anyRounded = false;
+    let anyPerp = false;
+
+    for (const { prop, cls } of PERP_CORNERS) {
+      const raw = getResolvedValue(el, prop);
+      const val = parseFloat(raw);
+      const isPerp = Number.isFinite(val) && val === 0;
+      el.classList.toggle(CFG.classes[cls], isPerp);
+      if (isPerp) anyPerp = true;
+      else anyRounded = true;
+    }
+
+    // Only keep perp classes if the element has a mix of rounded and straight corners
+    if (!anyRounded || !anyPerp) {
+      clearAllPerpClasses(el);
+    }
+  }
+
   function buildInputSig(el) {
-    return (el.style?.fontFamily || "") + "|" +
-           (el.style?.fontWeight || "") + "|" +
-           (el.style?.getPropertyValue?.("color") || el.style?.color || "") + "|" +
-           (el.style?.getPropertyValue?.("background-color") || el.style?.backgroundColor || "") + "|" +
-           (el.style?.background || "") + "|" +
-           (el.style?.borderStyle || "") + "|" +
-           (el.style?.borderWidth || "") + "|" +
-           (el.style?.border || "");
+    return getInlineValue(el, "font-family") + "|" +
+           getInlineValue(el, "font-weight") + "|" +
+           getInlineValue(el, "color") + "|" +
+           getInlineValue(el, "background-color") + "|" +
+           getInlineValue(el, "background") + "|" +
+           getInlineValue(el, "border-style") + "|" +
+           getInlineValue(el, "border-width") + "|" +
+           getInlineValue(el, "border") + "|" +
+           getInlineValue(el, "border-radius");
   }
 
   function processOne(el) {
@@ -958,6 +1007,7 @@
       applySurfaceClasses(el);
       applyDarkSurfaceClass(el);
       applyExpandableInputClass(el);
+      applyPerpendicularCorners(el);
     }
 
     // Content surface classes depend on dimensions which change independently of style
