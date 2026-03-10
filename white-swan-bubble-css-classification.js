@@ -922,8 +922,8 @@
   function buildInputSig(el) {
     return (el.style?.fontFamily || "") + "|" +
            (el.style?.fontWeight || "") + "|" +
-           (el.style?.color || "") + "|" +
-           (el.style?.backgroundColor || "") + "|" +
+           (el.style?.getPropertyValue?.("color") || el.style?.color || "") + "|" +
+           (el.style?.getPropertyValue?.("background-color") || el.style?.backgroundColor || "") + "|" +
            (el.style?.background || "") + "|" +
            (el.style?.borderStyle || "") + "|" +
            (el.style?.borderWidth || "") + "|" +
@@ -982,8 +982,10 @@
         // Buttons are volatile (hover, state changes)
         applyButtonClasses(el);
       }
-      applyDestructiveTextClass(el);
     }
+
+    // Destructive text depends on color which may arrive late via CSS variables
+    applyDestructiveTextClass(el);
   }
 
   function onMutations(mutations) {
