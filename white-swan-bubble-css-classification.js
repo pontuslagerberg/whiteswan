@@ -710,8 +710,24 @@
     el.classList.toggle(CFG.classes.destructiveText, isDestructive);
   }
 
+  function isInChatMother(el) {
+    return el.classList.contains("chat_mother") || !!el.closest?.(".chat_mother");
+  }
+
+  function clearAllSurfaceClasses(el) {
+    el.classList.remove(
+      CFG.classes.surfaceBright, CFG.classes.darkSurface,
+      CFG.classes.surfaceBrightContent, CFG.classes.darkSurfaceContent
+    );
+  }
+
   function applySurfaceClasses(el) {
     const tag = el.tagName;
+
+    if (isInChatMother(el)) {
+      clearAllSurfaceClasses(el);
+      return;
+    }
 
     // Buttons, separators, and Page elements are never surfaces
     if (tag === "BUTTON" || isButtonish(el) || el.classList.contains(CFG.classes.separato) || el.classList.contains("Page")) {
@@ -886,7 +902,7 @@
   }
 
   function applyDarkSurfaceClass(el) {
-    if (el.tagName === "BUTTON" || isButtonish(el) || el.classList.contains(CFG.classes.separato) || el.classList.contains("Page")) {
+    if (isInChatMother(el) || el.tagName === "BUTTON" || isButtonish(el) || el.classList.contains(CFG.classes.separato) || el.classList.contains("Page")) {
       el.classList.remove(CFG.classes.darkSurface);
       return;
     }
@@ -941,6 +957,10 @@
   }
 
   function applyTransparentBgClass(el) {
+    if (!isInputElement(el)) {
+      el.classList.remove(CFG.classes.transparentBg);
+      return;
+    }
     el.classList.toggle(CFG.classes.transparentBg, detectTransparency(el));
   }
 
