@@ -705,6 +705,15 @@
       el.classList.remove(CFG.classes.destructiveText);
       return;
     }
+
+    const isTextLikeElement = el.matches?.(
+      ".bubble-element.Text, label, a.bubble-element.Link, .file-input-text, .dz-message, .ql-editor[contenteditable], .bad-revision"
+    );
+    if (!isTextLikeElement && !hasOwnTextNode(el)) {
+      el.classList.remove(CFG.classes.destructiveText);
+      return;
+    }
+
     const { color } = getOriginalColor(el);
     const isDestructive = CFG._destructiveLinkColors && CFG._destructiveLinkColors.has(color);
     el.classList.toggle(CFG.classes.destructiveText, isDestructive);
@@ -762,11 +771,10 @@
 
     let isBright = CFG._brightBgSet.has(bgToken);
 
-    // For CSS vars or unrecognized values, resolve to RGB and recheck
     if (!isBright) {
       const resolved = normalizeColor(getComputedStyle(el).backgroundColor);
       if (!isTransparentColor(resolved)) {
-        isBright = CFG._brightBgSet.has(resolved);
+        isBright = CFG._brightBgSet.has(resolved) || isColorBright(resolved);
       }
     }
 
@@ -905,6 +913,13 @@
     return relativeLuminance(+m[1], +m[2], +m[3]) < 0.2;
   }
 
+  function isColorBright(colorStr) {
+    if (!colorStr) return false;
+    const m = colorStr.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+    if (!m) return false;
+    return relativeLuminance(+m[1], +m[2], +m[3]) > 0.7;
+  }
+
   function applyDarkSurfaceClass(el) {
     if (isInChatMother(el) || el.tagName === "BUTTON" || isButtonish(el) || el.classList.contains(CFG.classes.separato) || el.classList.contains("Page")) {
       el.classList.remove(CFG.classes.darkSurface);
@@ -1005,7 +1020,7 @@
   }
 
   function applyBorderClass(el) {
-    if (isInputElement(el) || isButtonElement(el)) {
+    if (isInputElement(el) || isButtonElement(el) || isHiddenFileInput(el)) {
       clearAllBorderClasses(el);
       return;
     }
@@ -1102,7 +1117,10 @@
       applyFontClasses(el);
 
       // Inputs and buttons must never carry border classes
-      if (isInputElement(el)) {
+      if (isHiddenFileInput(el)) {
+        clearAllBorderClasses(el);
+        el.classList.remove(CFG.classes.input);
+      } else if (isInputElement(el)) {
         el.classList.add(CFG.classes.input);
         clearAllBorderClasses(el);
       } else if (isButtonElement(el)) {
