@@ -687,6 +687,15 @@
       return "";
     }
 
+    // If this is a file-uploader button inside a PictureInput, mark its parent
+    // so CSS can treat the container as a link shell instead of an input.
+    if (isButton && el.classList.contains("button_for_file_uploader")) {
+      const pictureInput = el.closest?.(".PictureInput");
+      if (pictureInput) {
+        pictureInput.setAttribute("data-ws-is-link", "1");
+      }
+    }
+
     el.classList.add(CFG.classes.link);
 
     const { color, usedComputed } = getOriginalColor(el);
@@ -773,7 +782,12 @@
       return;
     }
 
-    let isBright = bgToken ? CFG._brightBgSet.has(bgToken) : false;
+    let isBright = false;
+
+    if (bgToken) {
+      // Prefer the explicit inline/Bubble background when present.
+      isBright = CFG._brightBgSet.has(bgToken) || isColorBright(bgToken);
+    }
 
     if (!isBright) {
       const resolved = normalizeColor(getComputedStyle(el).backgroundColor);
@@ -1010,8 +1024,9 @@
   }
 
   function isLinkStyledPictureInput(el) {
-    return el.classList.contains("PictureInput") &&
-      el.querySelector?.("[data-ws-is-link], .button_for_file_uploader[style*='background-color: transparent']");
+    if (!el.classList.contains("PictureInput")) return false;
+    if (el.hasAttribute("data-ws-is-link")) return true;
+    return !!el.querySelector?.("[data-ws-is-link], .button_for_file_uploader[style*='background-color: transparent'], .button_for_file_uploader[data-wsc-is-link='1']");
   }
 
   function isLinkStyledUploaderButton(el) {
