@@ -361,7 +361,11 @@
     if (!s) return "";
     const t = String(s).trim().toLowerCase();
     if (!t) return "";
-    if (t.startsWith("rgb")) return t.replace(/\s+/g, "");
+    if (t.startsWith("rgb")) {
+      const inner = t.replace(/^rgba?\(|\)$/g, "").trim();
+      const normalizedInner = inner.split(/[,\s]+/).filter(Boolean).join(",");
+      return (t.startsWith("rgba") ? "rgba(" : "rgb(") + normalizedInner + ")";
+    }
     if (t.startsWith("#")) return t;
     if (t.startsWith("var(")) return t.replace(/\s+/g, "");
     return t;
@@ -908,18 +912,24 @@
     return 0.2126 * sRGB[0] + 0.7152 * sRGB[1] + 0.0722 * sRGB[2];
   }
 
+  /** Parse r,g,b from rgb/rgba string (comma- or space-separated; computed style can return either). */
+  function parseRgbChannels(colorStr) {
+    if (!colorStr) return null;
+    const m = String(colorStr).match(/rgba?\(([^)]+)\)/);
+    if (!m) return null;
+    const parts = m[1].split(/[,\s]+/).filter(Boolean).map(Number);
+    if (parts.length >= 3 && parts.every(Number.isFinite)) return parts.slice(0, 3);
+    return null;
+  }
+
   function isColorDark(colorStr) {
-    if (!colorStr) return false;
-    const m = colorStr.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
-    if (!m) return false;
-    return relativeLuminance(+m[1], +m[2], +m[3]) < 0.2;
+    const ch = parseRgbChannels(colorStr);
+    return ch ? relativeLuminance(ch[0], ch[1], ch[2]) < 0.2 : false;
   }
 
   function isColorBright(colorStr) {
-    if (!colorStr) return false;
-    const m = colorStr.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
-    if (!m) return false;
-    return relativeLuminance(+m[1], +m[2], +m[3]) > 0.7;
+    const ch = parseRgbChannels(colorStr);
+    return ch ? relativeLuminance(ch[0], ch[1], ch[2]) > 0.7 : false;
   }
 
   function applyDarkSurfaceClass(el) {
@@ -1355,10 +1365,18 @@
     if (textAncestor) schedule(textAncestor, true);
   }
 
+  /** Re-read palette from CSS variables and re-classify the DOM. Also removes the theme stylesheet link so the correct light/dark CSS can be re-attached. */
   function refreshTheme() {
+    document.getElementById("white-label-stylesheet")?.remove();
     CFG._palette = null;
     initPalette();
     schedule(document.body);
+  }
+
+  /** Remove the theme <link> by id (e.g. when toggling light/dark mode so the old external CSS stops applying). Does not remove any <style> element. */
+  function detachThemeStylesheet(linkId) {
+    const id = linkId || "white-label-stylesheet";
+    document.getElementById(id)?.remove();
   }
 
   function sanitizeCSS(css) {
@@ -1392,7 +1410,7 @@
     }
   }
 
-  window.WSClassifier = { start, stop, rescan, refreshTheme, injectCSS, removeCSS };
+  window.WSClassifier = { start, stop, rescan, refreshTheme, detachThemeStylesheet, injectCSS, removeCSS };
 })();
 
 WSClassifier.start();
