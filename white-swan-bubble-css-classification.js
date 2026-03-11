@@ -874,6 +874,10 @@
   }
 
   function applySecondaryTextClass(el) {
+    if (isLinkStyledUploaderButton(el)) {
+      el.classList.remove(CFG.classes.secondaryText);
+      return;
+    }
     const isClassifiedText =
       el.classList.contains(CFG.classes.fontBold) ||
       el.classList.contains(CFG.classes.fontLight);
@@ -1010,10 +1014,17 @@
       el.querySelector?.("[data-ws-is-link], .button_for_file_uploader[style*='background-color: transparent']");
   }
 
+  function isLinkStyledUploaderButton(el) {
+    if (el.tagName !== "BUTTON" || !el.classList.contains("button_for_file_uploader")) return false;
+    const pictureInput = el.closest?.(".PictureInput");
+    return pictureInput ? isLinkStyledPictureInput(pictureInput) : false;
+  }
+
   function isInputElement(el) {
     if (!el.matches?.(INPUT_SELECTOR)) return false;
     if (isHiddenFileInput(el)) return false;
     if (isLinkStyledPictureInput(el)) return false;
+    if (isLinkStyledUploaderButton(el)) return false;
     return true;
   }
 
@@ -1034,7 +1045,7 @@
   }
 
   function applyBorderClass(el) {
-    if (isInputElement(el) || isButtonElement(el) || isHiddenFileInput(el)) {
+    if (isInputElement(el) || isButtonElement(el) || isHiddenFileInput(el) || isLinkStyledUploaderButton(el)) {
       clearAllBorderClasses(el);
       return;
     }
@@ -1134,6 +1145,9 @@
       if (isHiddenFileInput(el)) {
         clearAllBorderClasses(el);
         el.classList.remove(CFG.classes.input);
+      } else if (isLinkStyledUploaderButton(el)) {
+        clearAllBorderClasses(el);
+        el.classList.remove(CFG.classes.input, CFG.classes.transparentBg);
       } else if (isInputElement(el)) {
         el.classList.add(CFG.classes.input);
         clearAllBorderClasses(el);

@@ -1,0 +1,479 @@
+.Page {
+  background-color: #0b0b0b !important;
+  }
+  .ws-font-light:not(:is(.ws-btn, .ws-link, .ws-input, .chat_mother *)), .ws-font-bold:not(:is(.ws-btn, .ws-link, .ws-input, .chat_mother *)), svg:not(:is(.ws-btn, .ws-link, .ws-input, .chat_mother *)) {
+  color: rgba(255, 242, 218, 1) !important;
+  }
+  
+  .ws-secondary-text:not(:is(.ws-btn, .ws-link, .ws-input, .chat_mother *)) {
+  color: rgba(255, 242, 218, 0.5) !important;
+  }
+  
+  .ws-destructive-text.ws-destructive-text.ws-destructive-text {
+  color: #e76e74 !important;
+  }
+  .ws-surface-bright .ws-font-bold:not(:is(.ws-btn, .ws-link, .ws-input, .chat_mother *)), .ws-surface-bright .ws-font-light:not(:is(.ws-btn, .ws-link, .ws-input, .chat_mother *)), .ws-surface-bright svg:not(:is(.ws-btn, .ws-link, .ws-input, .chat_mother *)), .bad-revision.ws-font-bold.ws-btn, .ws-surface-bright.ws-font-bold:not(:is(.ws-btn, .ws-link, .ws-input, .chat_mother *)), .ws-surface-bright.ws-font-light:not(:is(.ws-btn, .ws-link, .ws-input, .chat_mother *)), svg.ws-surface-bright:not(:is(.ws-btn, .ws-link, .ws-input, .chat_mother *)) {
+  color: rgba(11, 11, 11, 1) !important;
+  }
+  
+  .ws-surface-bright .ws-secondary-text:not(:is(.ws-btn, .ws-link, .ws-input, .chat_mother *)) {
+  color: rgba(11, 11, 11, 0.5) !important;
+  }
+  
+  .ws-surface-bright .ws-destructive-text.ws-destructive-text.ws-destructive-text:not(:is(.ws-btn, .ws-link, .ws-input, .chat_mother *)) {
+  color: #C15B60 !important;
+  }   
+       .ws-dark-surface-content {
+  background-color: #9ff4ff !important;
+  }
+  
+  .ws-surface-bright-content {
+  background-color: #d99494 !important;
+  }  
+  
+  .ws-separato {
+  background-color: rgba(255, 242, 218, 1) !important;
+  }
+  
+  .ws-border-top {
+  border-top-color: rgba(255, 242, 218, 1) !important; }
+  .ws-border-bottom {
+  border-right-color: rgba(255, 242, 218, 1) !important;}
+  .ws-border-bottom {border-bottom-color: rgba(255, 242, 218, 1) !important;
+  }
+  .ws-border-left {
+  border-left-color: rgba(255, 242, 218, 1) !important; 
+  }
+  .ws-border-all {border-color: rgba(255, 242, 218, 1) !important;
+  }   
+    
+    .ws-surface-bright .ws-separato {
+  background-color: rgba(11, 11, 11, 0.51) !important;
+  }
+  
+  .ws-surface-bright .ws-border-top {
+  border-top-color: rgba(11, 11, 11, 0.51) !important; }
+  .ws-surface-bright .ws-border-right { 
+  border-right-color: rgba(11, 11, 11, 0.51) !important;
+  }
+  .ws-surface-bright .ws-border-bottom {
+  border-bottom-color: rgba(11, 11, 11, 0.51) !important;
+  }
+  .ws-surface-bright .ws-border-left {
+  border-left-color: rgba(11, 11, 11, 0.51) !important;
+  }
+  .ws-surface-bright .ws-border-all {
+  border-color: rgba(11, 11, 11, 0.51) !important;
+  }
+  
+     
+  @font-face {
+  font-family: "Good Grief Font Set_Bold";
+  src: url('https://762d0145e332a78fcb6f9b9f529c26ab.cdn.bubble.io/f1771946720934x381516113372776450/CooperBlkBT-Regular.woff2') format('woff2');}
+  .ws-font-bold, .Alert {
+  font-family: "Good Grief Font Set_Bold" !important;
+  }
+  @font-face {
+  font-family: "Good Grief Font Set_Paragraph";
+  src: url('https://762d0145e332a78fcb6f9b9f529c26ab.cdn.bubble.io/f1771946716266x385296535330651200/SaansMono-Medium.woff2') format('woff2');}
+  .ws-font-light {
+  font-family: "Good Grief Font Set_Paragraph" !important;
+  }
+    
+  @font-face {
+  font-family: "Cooper italic_Bold";
+  src: url('https://762d0145e332a78fcb6f9b9f529c26ab.cdn.bubble.io/f1772073116104x812884907559014800/CooperBlkBT-Italic.woff2') format('woff2');}
+  .ws-btn {
+  font-family: "Cooper italic_Bold" !important;
+  }
+     
+  
+  @font-face {
+  font-family: "Cooper italic_Bold";
+  src: url('https://762d0145e332a78fcb6f9b9f529c26ab.cdn.bubble.io/f1772073116104x812884907559014800/CooperBlkBT-Italic.woff2') format('woff2');}
+  .ws-link {
+  font-family: "Cooper italic_Bold" !important;
+  }
+     
+  
+  
+         
+         
+  
+  .ws-link--normal {
+  color: #39f9ba !important;
+  }
+  
+  .ws-surface-bright .ws-link--normal {
+  color: #047c54 !important;
+  }   
+  
+  .ws-link--destructive {
+  color: #e76e74 !important;
+  }
+  
+  .ws-surface-bright .ws-link--destructive {
+  color: #C15B60 !important;
+  }   
+  
+  
+     
+  button.ws-btn--green {
+  background-color: rgba(157, 16, 34, 1) !important;border-radius: 10px !important;border-width: 2px !important;border-color: rgba(11, 11, 11, 1) !important;color: rgba(255, 242, 218, 1) !important;border-style: solid !important;
+  
+  }
+  .ws-btn--green:not(button) {
+  background-color: rgba(157, 16, 34, 1) !important;
+  color: rgba(255, 242, 218, 1) !important;
+  
+  }
+  button.ws-btn--green:hover, button.ws-btn--green.hover-preview {
+  background-color: rgba(157, 16, 34, 1) !important;border-radius: 10px !important;border-width: 2px !important;border-color: rgba(11, 11, 11, 1) !important;color: rgba(255, 242, 218, 1) !important;border-style: solid !important;
+  
+  }
+  .ws-btn--green:not(button):hover {
+  background-color: rgba(157, 16, 34, 1) !important;color: rgba(255, 242, 218, 1) !important;
+  
+  }
+  
+  
+  .Alert {
+  background-color: rgba(157, 16, 34, 1) !important;
+  color: rgba(255, 242, 218, 1) !important;
+  }
+  button.ws-btn--orange {
+  background: transparent !important;
+  border-radius: 10px !important;border-width: 2px !important;border-color: rgba(255, 242, 218, 1) !important;color: rgba(255, 242, 218, 1) !important;border-style: solid !important;
+  
+  }
+  .ws-btn--orange:not(button) {
+  background: transparent !important;
+  
+  color: rgba(255, 242, 218, 1) !important;
+  
+  }
+  button.ws-btn--orange:hover, button.ws-btn--orange.hover-preview {
+  background-color: rgba(255, 242, 218, 1) !important;border-radius: 10px !important;border-width: 2px !important;border-color: #FFFFFF !important;color: rgba(11, 11, 11, 1) !important;border-style: solid !important;
+  
+  }
+  .ws-btn--orange:not(button):hover {
+  background-color: rgba(255, 242, 218, 1) !important;color: rgba(11, 11, 11, 1) !important;
+  
+  }
+  
+  
+  
+  button.ws-btn--dark {
+  background-color: #201139 !important;border-radius: 30px !important;border-width: 2px !important;border-color: #FECDB9 !important;color: #FECDB9 !important;border-style: solid !important;
+  
+  }
+  .ws-btn--dark:not(button) {
+  background-color: #201139 !important;
+  color: #FECDB9 !important;
+  
+  }
+  button.ws-btn--dark:hover, button.ws-btn--dark.hover-preview {
+  background-color: #201139 !important;border-radius: 30px !important;border-width: 2px !important;border-color: #FECDB9 !important;color: #FECDB9 !important;border-style: solid !important;
+  
+  }
+  .ws-btn--dark:not(button):hover {
+  background-color: #201139 !important;color: #FECDB9 !important;
+  
+  }
+  
+  
+  
+  
+      
+  
+  .ws-surface-bright button.ws-btn--orange {
+  background: transparent !important;
+  border-radius: 10px !important;border-width: 2px !important;border-color: rgba(11, 11, 11, 1) !important;color: #201139 !important;border-style: solid !important;
+  
+  }
+  .ws-surface-bright .ws-btn--orange:not(button) {
+  background: transparent !important;
+  border-radius: 10px !important;border-width: 2px !important;border-color: rgba(11, 11, 11, 1) !important;color: #201139 !important;border-style: solid !important;
+  
+  }
+  
+     
+  
+  
+        :is(input:not(.input input), .input, .Input, select, .Dropdown, .date_div, .picker__input, button.button_for_file_uploader:not(.ws-link), .PictureInput, .FileInput, .tt-input, .tt-hint, .twitter-typeahead input, .AutocompleteDropdown input, .select2-MultiDropdown):not(.sp-input) {
+  background-color: rgba(255, 255, 255, 1) !important;border-radius: 10px !important;border-width: 2px !important;border-color: #FECDB9 !important;color: #201139 !important;border-style: solid !important;
+  
+  
+  }
+  
+  
+  :is(input:not(.input input), .input, .Input, select, .Dropdown, .date_div, .picker__input, button.button_for_file_uploader:not(.ws-link), .PictureInput, .FileInput, .tt-input, .tt-hint, .twitter-typeahead input, .AutocompleteDropdown input, .select2-MultiDropdown):hover:not(.sp-input), :is(input:not(.input input), .input, .Input, select, .Dropdown, .date_div, .picker__input, button.button_for_file_uploader:not(.ws-link), .PictureInput, .FileInput, .tt-input, .tt-hint, .twitter-typeahead input, .AutocompleteDropdown input, .select2-MultiDropdown):focus-within:not(.sp-input), .dropdown-visible.bubble-element.Group.input {
+  background-color: rgba(255, 255, 255, 1) !important;border-radius: 10px !important;border-width: 2px !important;border-color: #7572F6 !important;color: #201139 !important;border-style: solid !important;          
+  }
+  
+  
+  .ws-surface-bright :is(input:not(.input input), .input, .Input, select, .Dropdown, .date_div, .picker__input, button.button_for_file_uploader:not(.ws-link), .PictureInput, .FileInput, .tt-input, .tt-hint, .twitter-typeahead input, .AutocompleteDropdown input, .select2-MultiDropdown):not(.sp-input) {
+  background-color: rgba(255, 255, 255, 1) !important;border-radius: 10px !important;border-width: 2px !important;border-color: #201139 !important;color: #201139 !important;border-style: solid !important;
+  
+  }
+  
+  .ws-surface-bright :is(input:not(.input input), .input, .Input, select, .Dropdown, .date_div, .picker__input, button.button_for_file_uploader:not(.ws-link), .PictureInput, .FileInput, .tt-input, .tt-hint, .twitter-typeahead input, .AutocompleteDropdown input, .select2-MultiDropdown):hover:not(.sp-input), .ws-surface-bright :is(input:not(.input input), .input, .Input, select, .Dropdown, .date_div, .picker__input, button.button_for_file_uploader:not(.ws-link), .PictureInput, .FileInput, .tt-input, .tt-hint, .twitter-typeahead input, .AutocompleteDropdown input, .select2-MultiDropdown):focus-within:not(.sp-input) {
+  background-color: rgba(255, 255, 255, 1) !important;border-radius: 10px !important;border-width: 2px !important;border-color: #7572F6 !important;color: #201139 !important;border-style: solid !important;      
+  }
+  
+  .ws-surface-bright :is(.input, input, .Input, select, .Dropdown, .date_div, .picker__input):hover:not(.sp-input)::placeholder, .ws-surface-bright :is(.input, input, .Input, select, .Dropdown, .date_div, .picker__input):focus-within:not(.sp-input)::placeholder {
+  
+  }
+  
+  .ws-surface-bright :is(.input, input, .Input, select, .Dropdown, .date_div, .picker__input):not(.sp-input)::placeholder {
+  color: rgba(32, 17, 57, 0.5) !important;}
+  
+  
+  :is(.input, input, .Input, select, .Dropdown, .date_div, .picker__input):not(.sp-input)::placeholder {
+  color: rgba(32, 17, 57, 0.5) !important;
+  }
+  
+  :is(.input, input, .Input, select, .Dropdown, .date_div, .picker__input):hover:not(.sp-input)::placeholder, :is(.input, input, .Input, select, .Dropdown, .date_div, .picker__input):focus-within:not(.sp-input)::placeholder {
+  
+  }
+  
+  .select2-MultiDropdown .select2-search__field.select2-search__field.select2-search__field:not(.sp-input) {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+  }
+  
+  .input-dropdown, .select2-dropdown {
+  background-color: rgba(255, 255, 255, 1) !important;
+  border-top-left-radius: 0px !important;
+  border-top-right-radius: 0px !important;
+  
+  border-bottom-left-radius: 10px !important;
+  
+  border-bottom-right-radius:  10px !important;border-color: #7572F6 !important;
+  }
+  
+  .select2-dropdown--above {
+  border-bottom-left-radius: 0px !important;
+  border-bottom-right-radius: 0px !important;
+  
+  border-top-left-radius: 10px !important;
+  
+  border-top-right-radius:  10px !important;
+  }
+  .input-dropdown .ws-border, .select2-dropdown .ws-border {
+  border-color: #7572F6 !important;
+  }
+  .ws-input-expandable:focus-within, .dropdown-visible.bubble-element.Group.input {
+    border-bottom-left-radius: 0px !important;
+  border-bottom-right-radius:  0px !important;
+  }
+  
+  :is(.input .Text, .FileInput .file-input-text):not(.sp-input) {
+  color: rgba(32, 17, 57, 0.5) !important;
+  }
+  
+  :is(.input .Text, .FileInput .file-input-text):hover:not(.sp-input), :is(.input .Text, .FileInput .file-input-text):focus-within:not(.sp-input) {d
+  
+  }
+  
+  .ws-surface-bright :is(.input .Text, .FileInput .file-input-text):not(.sp-input) {
+  color: rgba(32, 17, 57, 0.5) !important;
+  }
+  
+  .ws-surface-bright :is(.input .Text, .FileInput .file-input-text):hover:not(.sp-input), .ws-surface-bright :is(.input .Text, .FileInput .file-input-text):focus-within:not(.sp-input) {
+  
+  }
+  
+  input.custom-input.bubble-element.Input.ws-font-light.ws-surface-bright, .select2-search__field {
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: inherit !important;
+  }
+  
+  .select2-MultiDropdown .select2-search__field.select2-search__field.select2-search__field:not(.sp-input) {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+  }
+  
+  .PictureInput .button_for_file_uploader.button_for_file_uploader.button_for_file_uploader:not(.sp-input), select.Dropdown:has(option.dropdown-placeholder:checked) {
+  color: rgba(32, 17, 57, 0.5) !important;
+  }
+  
+  .PictureInput .button_for_file_uploader.button_for_file_uploader.button_for_file_uploader:not(.sp-input):hover,
+  .button_for_file_uploader.button_for_file_uploader.button_for_file_uploader:not(.sp-input):focus-within,
+  select.Dropdown:has(option.dropdown-placeholder:checked):hover,
+  select.Dropdown:has(option.dropdown-placeholder:checked):focus-within {
+  
+  }
+  
+  .PictureInput.PictureInput.PictureInput:has([data-ws-is-link]):not(.sp-input),
+  .PictureInput:has([data-ws-is-link]) .button_for_file_uploader.button_for_file_uploader.button_for_file_uploader:not(.sp-input) {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+  
+  .PictureInput.PictureInput.PictureInput:has(.button_for_file_uploader[style*="opacity: 0"]):not(.sp-input) {
+    background-color: transparent !important;
+  }
+  
+  .ws-transparent-bg.ws-transparent-bg.ws-transparent-bg.ws-transparent-bg {
+  background-color: transparent !important;
+  border: none !important;
+  }
+  
+      
+  
+  
+        :is(textarea, .MultiLineInput, .easyrte-wrapper-bubble, .easyrte-wrapper-bubble :is(p, h1, h2, h3, h4, h5, h6, ul, ol, li, blockquote, strong, em, a, span, div), .ql-container :is(p, h1, h2, h3, h4, h5, h6, ul, ol, li, blockquote, strong, em, a, span, div), .ql-container, .ql-snow, .ql-snow :is(p, h1, h2, h3, h4, h5, h6, ul, ol, li, blockquote, strong, em, a, span, div)):not(.sp-input) {
+  background-color: rgba(255, 255, 255, 1) !important;border-radius: 10px !important;border-width: 2px !important;border-color: #FECDB9 !important;color: #201139 !important;border-style: solid !important;
+  
+  
+  }
+  
+  
+  :is(textarea, .MultiLineInput, .easyrte-wrapper-bubble, .easyrte-wrapper-bubble :is(p, h1, h2, h3, h4, h5, h6, ul, ol, li, blockquote, strong, em, a, span, div), .ql-container :is(p, h1, h2, h3, h4, h5, h6, ul, ol, li, blockquote, strong, em, a, span, div), .ql-container, .ql-snow, .ql-snow :is(p, h1, h2, h3, h4, h5, h6, ul, ol, li, blockquote, strong, em, a, span, div)):hover:not(.sp-input), :is(textarea, .MultiLineInput, .easyrte-wrapper-bubble, .easyrte-wrapper-bubble :is(p, h1, h2, h3, h4, h5, h6, ul, ol, li, blockquote, strong, em, a, span, div), .ql-container :is(p, h1, h2, h3, h4, h5, h6, ul, ol, li, blockquote, strong, em, a, span, div), .ql-container, .ql-snow, .ql-snow :is(p, h1, h2, h3, h4, h5, h6, ul, ol, li, blockquote, strong, em, a, span, div)):focus-within:not(.sp-input), .dropdown-visible.bubble-element.Group.input {
+  background-color: rgba(255, 255, 255, 1) !important;border-radius: 10px !important;border-width: 2px !important;border-color: #7572F6 !important;color: #201139 !important;border-style: solid !important;          
+  }
+  
+  
+  .ws-surface-bright :is(textarea, .MultiLineInput, .easyrte-wrapper-bubble, .easyrte-wrapper-bubble :is(p, h1, h2, h3, h4, h5, h6, ul, ol, li, blockquote, strong, em, a, span, div), .ql-container :is(p, h1, h2, h3, h4, h5, h6, ul, ol, li, blockquote, strong, em, a, span, div), .ql-container, .ql-snow, .ql-snow :is(p, h1, h2, h3, h4, h5, h6, ul, ol, li, blockquote, strong, em, a, span, div)):not(.sp-input) {
+  background-color: rgba(255, 255, 255, 1) !important;border-radius: 10px !important;border-width: 2px !important;border-color: #201139 !important;color: #201139 !important;border-style: solid !important;
+  
+  }
+  
+  .ws-surface-bright :is(textarea, .MultiLineInput, .easyrte-wrapper-bubble, .easyrte-wrapper-bubble :is(p, h1, h2, h3, h4, h5, h6, ul, ol, li, blockquote, strong, em, a, span, div), .ql-container :is(p, h1, h2, h3, h4, h5, h6, ul, ol, li, blockquote, strong, em, a, span, div), .ql-container, .ql-snow, .ql-snow :is(p, h1, h2, h3, h4, h5, h6, ul, ol, li, blockquote, strong, em, a, span, div)):hover:not(.sp-input), .ws-surface-bright :is(textarea, .MultiLineInput, .easyrte-wrapper-bubble, .easyrte-wrapper-bubble :is(p, h1, h2, h3, h4, h5, h6, ul, ol, li, blockquote, strong, em, a, span, div), .ql-container :is(p, h1, h2, h3, h4, h5, h6, ul, ol, li, blockquote, strong, em, a, span, div), .ql-container, .ql-snow, .ql-snow :is(p, h1, h2, h3, h4, h5, h6, ul, ol, li, blockquote, strong, em, a, span, div)):focus-within:not(.sp-input) {
+  background-color: rgba(255, 255, 255, 1) !important;border-radius: 10px !important;border-width: 2px !important;border-color: #7572F6 !important;color: #201139 !important;border-style: solid !important;      
+  }
+  
+  .ws-surface-bright :is(textarea, .MultiLineInput):hover:not(.sp-input)::placeholder, .ws-surface-bright :is(textarea, .MultiLineInput):focus-within:not(.sp-input)::placeholder {
+  
+  }
+  
+  .ws-surface-bright :is(textarea, .MultiLineInput):not(.sp-input)::placeholder {
+  color: rgba(32, 17, 57, 0.5) !important;}
+  
+  
+  :is(textarea, .MultiLineInput):not(.sp-input)::placeholder {
+  color: rgba(32, 17, 57, 0.5) !important;
+  }
+  
+  :is(textarea, .MultiLineInput):hover:not(.sp-input)::placeholder, :is(textarea, .MultiLineInput):focus-within:not(.sp-input)::placeholder {
+  
+  }
+  
+  
+  
+      .ql-toolbar.ql-snow:hover, .ql-toolbar.ql-snow:focus-within {
+    border-top-left-radius: 10px !important;
+    border-top-right-radius: 10px !important;
+  }
+  
+  .ql-editor:hover, .ql-editor:focus-within {
+    border-bottom-left-radius: 10px !important;
+    border-bottom-right-radius: 10px !important;
+  }
+  
+  .easyrte-wrapper-bubble:hover, .easyrte-wrapper-bubble:focus-within {
+    border-radius: 10px !important;
+  }    .ql-toolbar.ql-snow {
+    border-top-left-radius: 10px !important;
+    border-top-right-radius: 10px !important;
+  }
+  
+  .ql-editor {
+    border-bottom-left-radius: 10px !important;
+    border-bottom-right-radius: 10px !important;
+  }
+  
+  .easyrte-wrapper-bubble {
+    border-radius: 10px !important;
+  }.ql-editor.ql-blank::before {
+  color: rgba(32, 17, 57, 0.5) !important;
+  }
+  
+  .ql-editor.ql-blank:hover::before, .ql-editor.ql-blank:focus-within::before  {
+  color:  !important;
+  }
+  
+  .ws-surface-bright .ql-editor.ql-blank::before {
+  color: rgba(32, 17, 57, 0.5) !important;
+  }
+  
+  .ws-surface-bright .ql-editor.ql-blank:hover::before, .ws-surface-bright .ql-editor.ql-blank:focus-within::before {
+  color:  !important;
+  }
+  
+  
+  
+  .easyrte-wrapper-bubble .ql-container.ql-container.ql-container.ql-container.ql-container.ql-container,
+  .ql-editor.ql-editor.ql-editor.ql-editor.ql-editor.ql-editor,
+  .ql-editor.ql-editor.ql-editor.ql-editor.ql-editor :is(p, h1, h2, h3, h4, h5, h6, ul, ol, li, blockquote, strong, em, a, span, div),
+  .ql-toolbar.ql-toolbar.ql-toolbar.ql-toolbar.ql-toolbar :is(span, div, select) {
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  
+  .bubble-element.Group:has(.easyrte-wrapper-bubble),
+  .bubble-element.Group:has(.easyrte-wrapper-snow) {
+    border-style: none !important;
+    border-width: 0 !important;
+    box-shadow: none !important;
+  }
+  
+  .ql-toolbar ~ .ql-container.ql-container.ql-container.ql-container.ql-container.ql-container, .ql-editor.ql-editor.ql-editor.ql-editor.ql-editor.ql-editor.ql-editor {
+    border-top: none !important;
+    border-top-left-radius: 0 !important;
+    border-top-right-radius: 0 !important;
+  box-shadow: none !important;
+  }
+  
+  .ql-toolbar.ql-toolbar.ql-toolbar.ql-toolbar.ql-toolbar.ql-toolbar {
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+    border-bottom: none !important;
+  }
+  
+  /* Mention dropdown container */
+  .ql-mention-list-container.ql-mention-list-container {
+    border-radius: 10px !important;
+    overflow: hidden !important;
+  }
+  
+  /* Strip individual borders from list and items */
+  .ql-mention-list-container .ql-mention-list.ql-mention-list.ql-mention-list,
+  .ql-mention-list-container .ql-mention-list-item.ql-mention-list-item.ql-mention-list-item {
+    border: none !important;
+    box-shadow: none !important;
+  }
+  
+  /* Highlight selected item */
+  .ql-mention-list-container .ql-mention-list-item.ql-mention-list-item.selected {
+    background-color: rgba(255, 255, 255, 1) !important;
+  }
+  
+  
+  
+  .ws-top-left-perpendicular.ws-top-left-perpendicular.ws-top-left-perpendicular.ws-top-left-perpendicular.ws-top-left-perpendicular {
+    border-top-left-radius: 0 !important;
+  }
+  
+  .ws-top-right-perpendicular.ws-top-right-perpendicular.ws-top-right-perpendicular.ws-top-right-perpendicular.ws-top-right-perpendicular {
+    border-top-right-radius: 0 !important;
+  }
+  
+  .ws-bottom-left-perpendicular.ws-bottom-left-perpendicular.ws-bottom-left-perpendicular.ws-bottom-left-perpendicular.ws-bottom-left-perpendicular {
+    border-bottom-left-radius: 0 !important;
+  }
+  
+  .ws-bottom-right-perpendicular.ws-bottom-right-perpendicular.ws-bottom-right-perpendicular.ws-bottom-right-perpendicular.ws-bottom-right-perpendicular {
+    border-bottom-right-radius: 0 !important;
+  }
