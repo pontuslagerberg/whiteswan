@@ -338,14 +338,14 @@
     if (bgc) return bgc;
     const bg = getInlineValue(el, "background");
     if (bg) {
-      const m = bg.match(/(var\([^)]+\)|rgba?\([^)]+\))\s*$/);
+      const m = bg.match(/(var\([^)]+\)|rgba?\([^)]+\))/);
       if (m) return m[1].trim();
     }
     const bubbleBgc = getBubbleRuleValue(el, "background-color");
     if (bubbleBgc) return bubbleBgc;
     const bubbleBg = getBubbleRuleValue(el, "background");
     if (bubbleBg) {
-      const m = bubbleBg.match(/(var\([^)]+\)|rgba?\([^)]+\))\s*$/);
+      const m = bubbleBg.match(/(var\([^)]+\)|rgba?\([^)]+\))/);
       if (m) return m[1].trim();
     }
     return "";
@@ -764,18 +764,20 @@
 
     // Only classify elements that explicitly set a non-transparent background
     const bgToken = normalizeColor(getInlineOrBubbleBg(el));
-    if (!bgToken || isTransparentColor(bgToken)) {
+    if (bgToken && isTransparentColor(bgToken)) {
       el.classList.remove(CFG.classes.surfaceBright);
       return;
     }
 
-    let isBright = CFG._brightBgSet.has(bgToken);
+    let isBright = bgToken ? CFG._brightBgSet.has(bgToken) : false;
 
     if (!isBright) {
       const resolved = normalizeColor(getComputedStyle(el).backgroundColor);
-      if (!isTransparentColor(resolved)) {
-        isBright = CFG._brightBgSet.has(resolved) || isColorBright(resolved);
+      if (!resolved || isTransparentColor(resolved)) {
+        el.classList.remove(CFG.classes.surfaceBright);
+        return;
       }
+      isBright = CFG._brightBgSet.has(resolved) || isColorBright(resolved);
     }
 
     el.classList.toggle(CFG.classes.surfaceBright, isBright);
@@ -927,18 +929,20 @@
     }
 
     const bgToken = normalizeColor(getInlineOrBubbleBg(el));
-    if (!bgToken || isTransparentColor(bgToken)) {
+    if (bgToken && isTransparentColor(bgToken)) {
       el.classList.remove(CFG.classes.darkSurface);
       return;
     }
 
-    let isDark = CFG._darkBgSet.has(bgToken);
+    let isDark = bgToken ? CFG._darkBgSet.has(bgToken) : false;
 
     if (!isDark) {
       const resolved = normalizeColor(getComputedStyle(el).backgroundColor);
-      if (!isTransparentColor(resolved)) {
-        isDark = CFG._darkBgSet.has(resolved) || isColorDark(resolved);
+      if (!resolved || isTransparentColor(resolved)) {
+        el.classList.remove(CFG.classes.darkSurface);
+        return;
       }
+      isDark = CFG._darkBgSet.has(resolved) || isColorDark(resolved);
     }
 
     el.classList.toggle(CFG.classes.darkSurface, isDark);
