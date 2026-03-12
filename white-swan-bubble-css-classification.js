@@ -461,6 +461,15 @@
         el.classList.remove(CFG.classes.fontLight);
         return "B*";
       }
+    }
+
+    // Tooltips: always treat tippy content as light font, independent of the
+    // underlying font stack, as long as no explicit inline font-family is set.
+    if (!hasInlineFont && el.matches?.(".tippy-content")) {
+      el.classList.add(CFG.classes.fontLight);
+      el.classList.remove(CFG.classes.fontBold);
+      setFrozen(el, "font", "light");
+      return "L:tippy";
       if (frozen === "light") {
         el.classList.add(CFG.classes.fontLight);
         el.classList.remove(CFG.classes.fontBold);
@@ -1216,6 +1225,10 @@
 
       if (getFrozen(el, "is-link") !== "1") {
         applyButtonClasses(el);
+      }
+
+      if (isInputElement(el) || isButtonElement(el)) {
+        applyPerpendicularCorners(el);
       }
     }
   }
