@@ -158,6 +158,7 @@
       ".bubble-element.Popup",
       ".clickable-element.bubble-element.Button",
       "a.bubble-element.Link",
+      ".tippy-content",
     ].join(","),
 
     enablePointerRecheck: true,
