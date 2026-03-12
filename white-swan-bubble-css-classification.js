@@ -1186,7 +1186,7 @@
       applyTransparentBgClass(el);
       applyExpandableInputClass(el);
 
-      if (isInputElement(el)) {
+      if (isInputElement(el) || isButtonElement(el)) {
         applyPerpendicularCorners(el);
       } else {
         clearAllPerpClasses(el);
