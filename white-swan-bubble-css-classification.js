@@ -173,7 +173,7 @@
   let lastFlushAt = 0;
   const FLUSH_INTERVAL_MS = 250;
 
-  const lastSig = new WeakMap();
+  let lastSig = new WeakMap();
 
   function schedule(el, priority = false) {
     if (!el || el.nodeType !== 1) return;
@@ -504,8 +504,13 @@
     return !!el.querySelector?.(".bubble-element.Text");
   }
 
+  function isIconElement(el) {
+    return el.classList.contains("Icon");
+  }
+
   function isButtonish(el) {
     if (el.classList.contains("input")) return false;
+    if (isIconElement(el)) return false;
     if (el.tagName === "BUTTON") return true;
     // Divs/Groups without any text content are never buttons (e.g. icon-only circles, image containers)
     if (el.matches?.(".bubble-element.Group") && !hasDescendantText(el)) return false;
@@ -752,7 +757,7 @@
     }
 
     // Buttons, separators, and Page elements are never surfaces
-    if (tag === "BUTTON" || isButtonish(el) || el.classList.contains(CFG.classes.separato) || el.classList.contains("Page")) {
+    if ((tag === "BUTTON" && !isIconElement(el)) || isButtonish(el) || el.classList.contains(CFG.classes.separato) || el.classList.contains("Page")) {
       el.classList.remove(CFG.classes.surfaceBright);
       return;
     }
@@ -951,7 +956,7 @@
   }
 
   function applyDarkSurfaceClass(el) {
-    if (isInChatMother(el) || el.tagName === "BUTTON" || isButtonish(el) || el.classList.contains(CFG.classes.separato) || el.classList.contains("Page")) {
+    if (isInChatMother(el) || (el.tagName === "BUTTON" && !isIconElement(el)) || isButtonish(el) || el.classList.contains(CFG.classes.separato) || el.classList.contains("Page")) {
       el.classList.remove(CFG.classes.darkSurface);
       return;
     }
@@ -1055,8 +1060,8 @@
   }
 
   function isButtonElement(el) {
-    return el.tagName === "BUTTON" || isButtonish(el) ||
-           el.classList.contains(CFG.classes.btn);
+    if (isIconElement(el)) return false;
+    return el.tagName === "BUTTON" || isButtonish(el) || el.classList.contains(CFG.classes.btn);
   }
 
   function applyBorderClass(el) {
@@ -1144,6 +1149,11 @@
            getInlineValue(el, "border-radius");
   }
 
+  function isClickContext(el) {
+    return el.classList.contains("clickable-element") ||
+           !!el.closest?.(".clickable-element");
+  }
+
   function processOne(el) {
     const sig = buildInputSig(el);
     const prevSig = lastSig.get(el);
@@ -1152,11 +1162,10 @@
 
     const isFirstRun = prevSig === undefined;
 
-    if (sigChanged) {
-      // Volatile: re-evaluate on every style change
+    // ── RUN-ONCE: full classification on first encounter ──
+    if (isFirstRun) {
       applyFontClasses(el);
 
-      // Inputs and buttons must never carry border classes
       if (isHiddenFileInput(el)) {
         clearAllBorderClasses(el);
         el.classList.remove(CFG.classes.input);
@@ -1170,44 +1179,44 @@
         clearAllBorderClasses(el);
       }
 
-      // Separato must be classified before surfaces (separators are excluded from surfaces).
-      if (isFirstRun) {
-        applySeparatoClass(el);
-      }
-
+      applySeparatoClass(el);
       applySurfaceClasses(el);
       applyDarkSurfaceClass(el);
+      applyContentSurfaceClasses(el);
       applyTransparentBgClass(el);
       applyExpandableInputClass(el);
-      applyPerpendicularCorners(el);
+
+      if (isInputElement(el)) {
+        applyPerpendicularCorners(el);
+      } else {
+        clearAllPerpClasses(el);
+      }
+
+      const linkResult = applyLinkClasses(el);
+      if (linkResult) {
+        setFrozen(el, "is-link", "1");
+        clearAllButtonClasses(el);
+      } else {
+        applyButtonClasses(el);
+      }
+
+      applyToggleClass(el);
+      applySecondaryTextClass(el);
+      applyBorderClass(el);
+      applyDestructiveTextClass(el);
+      return;
     }
 
-    // Content surface classes depend on dimensions which change independently of style
-    applyContentSurfaceClasses(el);
-
+    // ── VOLATILE: only truly dynamic concerns on subsequent style changes ──
     if (sigChanged) {
-      // Stable classifications: classify once on first run, skip on re-runs
-      if (isFirstRun) {
-        const linkResult = applyLinkClasses(el);
-        if (linkResult) {
-          setFrozen(el, "is-link", "1");
-          clearAllButtonClasses(el);
-        } else {
-          applyButtonClasses(el);
-        }
-        applyToggleClass(el);
-        applySecondaryTextClass(el);
-        applyBorderClass(el);
-      } else if (getFrozen(el, "is-link") === "1") {
-        // Already classified as link — skip button re-evaluation
-      } else {
-        // Buttons are volatile (hover, state changes)
+      if (isClickContext(el)) {
+        applyFontClasses(el);
+      }
+
+      if (getFrozen(el, "is-link") !== "1") {
         applyButtonClasses(el);
       }
     }
-
-    // Destructive text depends on color which may arrive late via CSS variables
-    applyDestructiveTextClass(el);
   }
 
   function onMutations(mutations) {
@@ -1378,6 +1387,7 @@
   }
 
   function rescan() {
+    lastSig = new WeakMap();
     schedule(document.body);
   }
 
@@ -1394,9 +1404,10 @@
     if (textAncestor) schedule(textAncestor, true);
   }
 
-  /** Re-read palette from CSS variables and re-classify the DOM. Also removes the theme stylesheet link so the correct light/dark CSS can be re-attached. */
+  /** Re-read palette from CSS variables and re-classify the entire DOM from scratch. Also removes the theme stylesheet link so the correct light/dark CSS can be re-attached. */
   function refreshTheme() {
     document.getElementById("white-label-stylesheet")?.remove();
+    lastSig = new WeakMap();
     CFG._palette = null;
     initPalette();
     schedule(document.body);
