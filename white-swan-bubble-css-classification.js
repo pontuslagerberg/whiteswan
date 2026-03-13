@@ -356,19 +356,7 @@
   }
 
   function getInlineOrBubbleBg(el) {
-    let bgc = getInlineValue(el, "background-color");
-    if (!bgc) {
-      const styleAttr = el.getAttribute?.("style") || "";
-      let m = styleAttr.match(/background-color\s*:\s*([^;]+)/i);
-      if (m) bgc = m[1].trim();
-      if (!bgc) {
-        m = styleAttr.match(/background\s*:\s*([^;]+)/i);
-        if (m) {
-          const bgMatch = m[1].match(/(var\([^)]+\)|rgba?\([^)]+\))/);
-          if (bgMatch) bgc = bgMatch[1].trim();
-        }
-      }
-    }
+    const bgc = getInlineValue(el, "background-color");
     if (bgc) return bgc;
     const bg = getInlineValue(el, "background");
     if (bg) {
@@ -663,33 +651,26 @@
       mapped = rgbMap[bgToken] || rgbMap[bg] || "";
     }
 
-    if (!mapped) {
-      const resolved = normalizeColor(getComputedStyle(el).backgroundColor);
-      if (resolved) {
-        mapped = CFG._normalizedBgTokenToVariantClass[resolved] || (rgbMap && rgbMap[resolved]) || "";
-      }
-    }
-
     // CSS var substring matching (handles vars inside rgba(), etc.)
     if (!mapped) {
-      let bgStr = (getInlineValue(el, "background-color") + getInlineValue(el, "background")).toLowerCase();
-      if (!bgStr) bgStr = (el.getAttribute?.("style") || "").toLowerCase();
+      const bgStr = (getInlineValue(el, "background-color") + getInlineValue(el, "background")).toLowerCase();
       for (const [varSub, cls] of Object.entries(CFG.bgVarSubstringToClass)) {
         if (bgStr.includes(varSub)) { mapped = cls; break; }
       }
     }
 
-    if (!mapped && (bgToken === "rgb(255,255,255)" || bg === "rgb(255,255,255)")) {
-      mapped = CFG.classes.btnWhite;
-    }
-
     if (!mapped && p) {
-      if (bg === p.success) mapped = CFG.classes.btnGreen;
-      else if (bg === p.alert) mapped = CFG.classes.btnOrange;
-      else if (bg === p.primary) mapped = CFG.classes.btnDark;
+      const ch = parseRgbChannels(bg);
+      const looksGreen = ch && ch[1] > ch[0] && ch[1] > ch[2];
+      const looksRed = ch && ch[0] > ch[1] && ch[0] > ch[2];
+      const looksOrange = ch && ch[0] > 200 && ch[1] > 180;
+      const lum = ch ? relativeLuminance(ch[0], ch[1], ch[2]) : 0;
+      if (bg === p.success && looksGreen) mapped = CFG.classes.btnGreen;
+      else if (bg === p.alert && (looksOrange || looksRed)) mapped = CFG.classes.btnOrange;
+      else if (bg === p.primary && lum < 0.25) mapped = CFG.classes.btnDark;
       else if (bg === p.background) mapped = CFG.classes.btnGray;
-      else if (bg === p.surface) mapped = CFG.classes.btnWhite;
-      else if (bg === p.destructive || bg === p.destructiveAlt) mapped = CFG.classes.btnRed;
+      else if (bg === p.surface && lum > 0.85) mapped = CFG.classes.btnWhite;
+      else if ((bg === p.destructive || bg === p.destructiveAlt) && looksRed) mapped = CFG.classes.btnRed;
     }
 
     if (mapped) el.classList.add(mapped);
@@ -1220,15 +1201,19 @@
   }
 
   function buildInputSig(el) {
-    return getInlineValue(el, "font-family") + "|" +
-           getInlineValue(el, "font-weight") + "|" +
-           getInlineValue(el, "color") + "|" +
-           getInlineValue(el, "background-color") + "|" +
-           getInlineValue(el, "background") + "|" +
-           getInlineValue(el, "border-style") + "|" +
-           getInlineValue(el, "border-width") + "|" +
-           getInlineValue(el, "border") + "|" +
-           getInlineValue(el, "border-radius");
+    let sig = getInlineValue(el, "font-family") + "|" +
+              getInlineValue(el, "font-weight") + "|" +
+              getInlineValue(el, "color") + "|" +
+              getInlineValue(el, "background-color") + "|" +
+              getInlineValue(el, "background") + "|" +
+              getInlineValue(el, "border-style") + "|" +
+              getInlineValue(el, "border-width") + "|" +
+              getInlineValue(el, "border") + "|" +
+              getInlineValue(el, "border-radius");
+    if (isButtonish(el)) {
+      sig += "|bg:" + normalizeColor(getComputedStyle(el).backgroundColor);
+    }
+    return sig;
   }
 
   function isClickContext(el) {

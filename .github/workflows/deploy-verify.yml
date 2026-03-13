@@ -1,0 +1,41 @@
+# Lightweight workflow to verify deploy trigger and list changed files.
+# Run manually or on push to debug deployment pipeline.
+name: Deploy verification (diagnostic)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '*.js'
+      - '*.css'
+      - '.github/workflows/deploy-static-to-s3.yml'
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: List changed JS/CSS (on push)
+        if: github.event_name == 'push'
+        run: |
+          echo "Changed files (would trigger deploy):"
+          git diff --name-only --diff-filter=ACMR "${{ github.event.before }}" HEAD 2>/dev/null | grep -E '\.(js|css)$' || echo "(none)"
+
+      - name: List all JS/CSS in repo
+        run: |
+          echo "All tracked JS/CSS files:"
+          git ls-files | grep -E '\.(js|css)$' || echo "(none)"
+
+      - name: Check classification script
+        run: |
+          if [ -f "white-swan-bubble-css-classification.js" ]; then
+            echo "white-swan-bubble-css-classification.js exists"
+            grep -c "ws-btn--white" white-swan-bubble-css-classification.js || echo "0"
+            echo "occurrences of ws-btn--white"
+          else
+            echo "File not found"
+          fi

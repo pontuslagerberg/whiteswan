@@ -3,6 +3,7 @@
 # Required: GitHub secrets AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
 # Required: GitHub variables AWS_S3_BUCKET, AWS_CLOUDFRONT_DISTRIBUTION_ID
 # Optional: AWS_S3_PREFIX (e.g. cdn) if using an existing bucket with a prefix
+# Optional: DEPLOY_VERIFY_URL (e.g. https://assets.whiteswan.io) to verify deployment
 
 name: Deploy static assets to S3 + CloudFront
 
@@ -35,16 +36,19 @@ jobs:
       - name: Get JS/CSS files to deploy
         id: files
         run: |
+          # Only deploy root-level *.js and *.css (exclude subdirs like image-trim-api/)
           DEPLOY_ALL="${{ github.event.inputs.deploy_all }}"
           if [ "$DEPLOY_ALL" = "true" ]; then
-            FILES=$(git ls-files | grep -E '\.(js|css)$' || true)
+            FILES=$(git ls-files | grep -E '^[^/]+\.(js|css)$' || true)
           else
             if [ -n "${{ github.event.before }}" ]; then
-              FILES=$(git diff --name-only --diff-filter=ACMR "${{ github.event.before }}" HEAD | grep -E '\.(js|css)$' || true)
+              FILES=$(git diff --name-only --diff-filter=ACMR "${{ github.event.before }}" HEAD | grep -E '^[^/]+\.(js|css)$' || true)
             else
-              FILES=$(git ls-files | grep -E '\.(js|css)$' || true)
+              FILES=$(git ls-files | grep -E '^[^/]+\.(js|css)$' || true)
             fi
           fi
+          echo "Files to deploy:"
+          echo "$FILES" | grep -v '^$' || true
           if [ -z "$FILES" ]; then
             echo "files=" >> $GITHUB_OUTPUT
             echo "has_files=false" >> $GITHUB_OUTPUT
@@ -100,6 +104,26 @@ jobs:
         run: |
           aws cloudfront create-invalidation --distribution-id "$DIST_ID" --paths "/*"
           echo "Invalidation created."
+
+      - name: Verify deployment (optional)
+        if: steps.files.outputs.has_files == 'true' && vars.DEPLOY_VERIFY_URL != ''
+        env:
+          BASE_URL: ${{ vars.DEPLOY_VERIFY_URL }}
+        run: |
+          echo "Verifying deployed files..."
+          echo "${{ steps.files.outputs.files }}" | while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            url="${BASE_URL%/}/${f}"
+            echo "Fetching $url"
+            body=$(curl -sS -f "$url" || { echo "FAIL: Could not fetch $url"; exit 1; })
+            if [[ "$f" == *"white-swan-bubble-css-classification"* ]]; then
+              if echo "$body" | grep -q "ws-btn--white"; then
+                echo "OK: white-swan-bubble-css-classification.js contains ws-btn--white"
+              else
+                echo "WARN: white-swan-bubble-css-classification.js missing ws-btn--white - deployment may be stale or cached"
+              fi
+            fi
+          done
 
       - name: Summary
         if: steps.files.outputs.has_files == 'true'
