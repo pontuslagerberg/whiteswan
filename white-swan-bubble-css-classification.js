@@ -867,6 +867,10 @@
       isBright = CFG._brightBgSet.has(resolved) || isColorBright(resolved);
     }
 
+    const rect = el.getBoundingClientRect();
+    const meetsMinSize = rect.width >= 40 && rect.height >= 40;
+    if (isBright && !meetsMinSize) isBright = false;
+
     el.classList.toggle(CFG.classes.surfaceBright, isBright);
   }
 
