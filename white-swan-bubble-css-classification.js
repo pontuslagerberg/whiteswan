@@ -981,6 +981,14 @@
 
     const color = normalizeColor(getResolvedValue(el, "color", { clean: true }));
 
+    const isPrimaryOrBlack =
+      (CFG._primaryTextColors && CFG._primaryTextColors.has(color)) ||
+      color === "rgb(0,0,0)";
+    if (isPrimaryOrBlack) {
+      el.classList.remove(CFG.classes.secondaryText);
+      return;
+    }
+
     const isSecondaryTokenOrResolved =
       CFG._secondaryTextColors && CFG._secondaryTextColors.has(color);
     const isSubunitAlphaText = hasAlphaBelowOne(color);
