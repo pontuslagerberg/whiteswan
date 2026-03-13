@@ -488,6 +488,13 @@
   }
 
   function applyFontClasses(el) {
+    if (el.classList.contains("bold_p") || el.closest?.(".bold_p")) {
+      el.classList.add(CFG.classes.fontBold);
+      el.classList.remove(CFG.classes.fontLight);
+      setFrozen(el, "font", "bold");
+      return "B";
+    }
+
     const hasInlineFont = !!getInlineValue(el, "font-family");
     const frozen = getFrozen(el, "font");
     if (frozen && !hasInlineFont) {
