@@ -32,6 +32,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # need previous commit for git diff on push
 
       - name: Get JS/CSS files to deploy
         id: files
@@ -42,7 +44,8 @@ jobs:
             FILES=$(git ls-files | grep -E '^[^/]+\.(js|css)$' || true)
           else
             if [ -n "${{ github.event.before }}" ]; then
-              FILES=$(git diff --name-only --diff-filter=ACMR "${{ github.event.before }}" HEAD | grep -E '^[^/]+\.(js|css)$' || true)
+              FILES=$(git diff --name-only --diff-filter=ACMR "${{ github.event.before }}" HEAD 2>/dev/null | grep -E '^[^/]+\.(js|css)$' || true)
+              [ -z "$FILES" ] && FILES=$(git ls-files | grep -E '^[^/]+\.(js|css)$' || true)
             else
               FILES=$(git ls-files | grep -E '^[^/]+\.(js|css)$' || true)
             fi
