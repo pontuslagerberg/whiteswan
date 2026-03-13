@@ -1070,7 +1070,10 @@
     const rect = el.getBoundingClientRect();
     const meetsSize = rect.width >= 80 && rect.height >= 48;
     const hasText = hasDescendantText(el);
-    const qualifies = meetsSize && hasText;
+    const hasCollapsibleContent = hasText && Array.from(el.children || []).some(
+      (c) => c.nodeType === 1 && window.getComputedStyle(c).display === "none" && hasDescendantText(c)
+    );
+    const qualifies = (meetsSize && hasText) || hasCollapsibleContent;
 
     if (qualifies) {
       el.classList.toggle(CFG.classes.surfaceBrightContent, hasBright);
