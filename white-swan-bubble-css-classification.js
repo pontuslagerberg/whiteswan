@@ -91,6 +91,7 @@
     bgRgbToVariantClass: {
       "rgb(255, 255, 255)": "ws-btn--white",
       "rgb(235, 235, 245)": "ws-btn--gray",
+      "rgb(206, 206, 206)": "ws-btn--gray",
       "rgba(32, 17, 57, 0.2)": "ws-btn--gray",
       "rgba(32, 17, 57, 0.5)": "ws-btn--gray",
       "rgb(254, 205, 185)": "ws-btn--orange",
