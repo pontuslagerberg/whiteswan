@@ -633,6 +633,7 @@
     }
 
     // Color mapping (only for non-transparent, non-gradient buttons)
+    if (!CFG._normalizedBgTokenToVariantClass) buildNormalizedBgTokenToVariantClass();
     const bg = getEffectiveBg(el);
     const bgToken = normalizeColor(getInlineOrBubbleBg(el));
     const usedComputedBg = !bgToken;
@@ -641,10 +642,17 @@
 
     let mapped = "";
 
-    mapped = (CFG._normalizedBgTokenToVariantClass && CFG._normalizedBgTokenToVariantClass[bgToken]) || "";
+    mapped = CFG._normalizedBgTokenToVariantClass[bgToken] || "";
 
     if (!mapped && rgbMap) {
       mapped = rgbMap[bgToken] || rgbMap[bg] || "";
+    }
+
+    if (!mapped) {
+      const resolved = normalizeColor(getComputedStyle(el).backgroundColor);
+      if (resolved) {
+        mapped = CFG._normalizedBgTokenToVariantClass[resolved] || (rgbMap && rgbMap[resolved]) || "";
+      }
     }
 
     // CSS var substring matching (handles vars inside rgba(), etc.)
