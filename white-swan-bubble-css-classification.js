@@ -1278,7 +1278,7 @@
 
     // ── VOLATILE: only truly dynamic concerns on subsequent style changes ──
     if (sigChanged) {
-      if (isClickContext(el)) {
+      if (isClickContext(el) || el.matches?.(".bubble-element.Text")) {
         applyFontClasses(el);
       }
 
