@@ -84,6 +84,7 @@
       "var(--color_coDKP_default)": "ws-btn--gray",
       "var(--color_background_default)": "ws-btn--gray",
       "var(--color_surface_default)": "ws-btn--white",
+      "rgb(255, 255, 255)": "ws-btn--white",
     },
 
     // Keys are normalized (normalizeColor) so one form per color is enough; rgba(...,1) matches rgb(...).
@@ -640,7 +641,7 @@
 
     let mapped = "";
 
-    mapped = CFG.bgTokenToVariantClass[bgToken] || "";
+    mapped = (CFG._normalizedBgTokenToVariantClass && CFG._normalizedBgTokenToVariantClass[bgToken]) || "";
 
     if (!mapped && rgbMap) {
       mapped = rgbMap[bgToken] || rgbMap[bg] || "";
@@ -1300,6 +1301,14 @@
     }
   }
 
+  /** Normalized lookup for button variant by bg token; keys normalized so spacing in rgb() doesn't matter. */
+  function buildNormalizedBgTokenToVariantClass() {
+    CFG._normalizedBgTokenToVariantClass = {};
+    for (const [key, cls] of Object.entries(CFG.bgTokenToVariantClass)) {
+      CFG._normalizedBgTokenToVariantClass[normalizeColor(key)] = cls;
+    }
+  }
+
   function initBrightSurfaces() {
     CFG._brightBgSet = new Set();
 
@@ -1411,6 +1420,7 @@
       link: resolveCssVarToRgb("--color_primary_contrast_default"),
     };
     buildNormalizedRgbMap();
+    buildNormalizedBgTokenToVariantClass();
     initBrightSurfaces();
     initDarkSurfaces();
     initLinkColors();
