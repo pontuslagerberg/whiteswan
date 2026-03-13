@@ -110,6 +110,8 @@
       "--color_codkp_default": "ws-btn--gray",
       "--color_background_default": "ws-btn--gray",
       "--color_surface_default": "ws-btn--white",
+      "--color_success_default": "ws-btn--green",
+      "--color_success_default_rgb": "ws-btn--green",
     },
 
     brightSurface: {
