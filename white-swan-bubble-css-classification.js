@@ -715,12 +715,9 @@
     const tag = el.tagName;
     const isAnchor = tag === "A";
     const isButton = tag === "BUTTON";
-    const isClickable = el.classList.contains("clickable-element");
-    const isTextLink = isClickable && el.matches?.(".bubble-element.Text");
-
-    const isChildOfLinkParent = !isTextLink && !isAnchor && !isButton &&
-      el.matches?.(".bubble-element.Text") &&
-      el.parentElement?.closest?.(".clickable-element.link-underline, .clickable-element.link-colored, a.clickable-element");
+    const linkStyledClickable = ".clickable-element.link-underline, .clickable-element.link-colored, a.clickable-element";
+    const isTextLink = el.matches?.(".bubble-element.Text") &&
+      (el.classList.contains("clickable-element") || !!el.closest?.(linkStyledClickable));
 
     let isButtonLink = false;
 
@@ -744,7 +741,7 @@
       isButtonLink = isTransparent && borderNone && looksLikeLinkColor;
     }
 
-    if (!isTextLink && !isButtonLink && !isAnchor && !isChildOfLinkParent) {
+    if (!isTextLink && !isButtonLink && !isAnchor) {
       el.classList.remove(CFG.classes.link, CFG.classes.linkDestructive, CFG.classes.linkNormal);
       return "";
     }
@@ -776,7 +773,7 @@
     el.classList.toggle(CFG.classes.linkDestructive, isDestructive);
     el.classList.toggle(CFG.classes.linkNormal, isNormal);
 
-    return "LINK:" + (isDestructive ? "D" : isNormal ? "N" : "P") + (isButtonLink ? ":B" : isAnchor ? ":A" : isChildOfLinkParent ? ":C" : ":T");
+    return "LINK:" + (isDestructive ? "D" : isNormal ? "N" : "P") + (isButtonLink ? ":B" : isAnchor ? ":A" : ":T");
   }
 
   function applyDestructiveTextClass(el) {
@@ -1227,9 +1224,14 @@
     return sig;
   }
 
-  function isClickContext(el) {
+  /** True if el has clickable-element or is a descendant of one (Bubble often puts it only on outermost parent). */
+  function isClickableOrChildOfClickable(el) {
     return el.classList.contains("clickable-element") ||
            !!el.closest?.(".clickable-element");
+  }
+
+  function isClickContext(el) {
+    return isClickableOrChildOfClickable(el);
   }
 
   function processOne(el) {
