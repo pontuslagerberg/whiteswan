@@ -616,9 +616,12 @@
       return "BTN:gradient:";
     }
 
-    const isTransparent = detectTransparency(el);
+    const explicitBg = getInlineOrBubbleBg(el);
+    const explicitBgNorm = normalizeColor(explicitBg);
+    const hasExplicitNonTransparentBg = explicitBgNorm && !isTransparentColor(explicitBgNorm);
+    const isTransparent = !hasExplicitNonTransparentBg && detectTransparency(el);
 
-    // When transparent, skip color mapping — the bg is invisible
+    // When transparent, skip color mapping — the bg is invisible (unless we have explicit inline/Bubble solid color, e.g. outline button styled white)
     if (isTransparent) {
       if (el.tagName !== "DIV" && !el.matches?.(".bubble-element.Icon")) {
         // Non-divs and non-icon buttons get the explicit transparent class
