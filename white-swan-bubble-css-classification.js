@@ -14,6 +14,7 @@
       btnGreen: "ws-btn--green",
       btnOrange: "ws-btn--orange",
       btnGray: "ws-btn--gray",
+      btnWhite: "ws-btn--white",
       btnRed: "ws-btn--red",
       btnDark: "ws-btn--dark",
       btnYellow: "ws-btn--yellow",
@@ -45,6 +46,8 @@
       perpBottomLeft: "ws-bottom-left-perpendicular",
     },
 
+    // Used for both link variant (ws-link--destructive) and destructive text (ws-destructive-text).
+    // Tokens + rgb define destructive reds; resolved var values are added in init except when they equal primary.
     linkColors: {
       normal: {
         tokens: [
@@ -79,11 +82,14 @@
       "var(--color_primary_default)": "ws-btn--dark",
       "var(--color_coDyS_default)": "ws-btn--gray",
       "var(--color_coDKP_default)": "ws-btn--gray",
+      "var(--color_background_default)": "ws-btn--gray",
+      "var(--color_surface_default)": "ws-btn--white",
     },
 
+    // Keys are normalized (normalizeColor) so one form per color is enough; rgba(...,1) matches rgb(...).
     bgRgbToVariantClass: {
+      "rgb(255, 255, 255)": "ws-btn--white",
       "rgb(235, 235, 245)": "ws-btn--gray",
-      "rgb(235,235,245)": "ws-btn--gray",
       "rgba(32, 17, 57, 0.2)": "ws-btn--gray",
       "rgba(32, 17, 57, 0.5)": "ws-btn--gray",
       "rgb(254, 205, 185)": "ws-btn--orange",
@@ -98,6 +104,8 @@
       "--color_cofrq_default": "ws-btn--yellow",
       "--color_codys_default": "ws-btn--gray",
       "--color_codkp_default": "ws-btn--gray",
+      "--color_background_default": "ws-btn--gray",
+      "--color_surface_default": "ws-btn--white",
     },
 
     brightSurface: {
@@ -131,6 +139,16 @@
       ],
     },
 
+    // Primary/dark text color — never classified as destructive (text or link).
+    primaryText: {
+      tokens: [
+        "var(--color_primary_default)",
+      ],
+      rgb: [
+        "rgb(32, 17, 57)",
+      ],
+    },
+
     clickableButtonSelector: ".clickable-element.bubble-element.Group, .clickable-element.bubble-element.Button, .bad-revision",
 
     scanSelector: [
@@ -154,6 +172,8 @@
       ".bubble-element.Group",
       ".bubble-element.GroupFocus",
       ".bubble-element.group-item",
+      ".bubble-element.HTML",
+      ".bubble-element.HTML p, .bubble-element.HTML h1, .bubble-element.HTML h2, .bubble-element.HTML h3, .bubble-element.HTML h4, .bubble-element.HTML h5, .bubble-element.HTML h6, .bubble-element.HTML ul, .bubble-element.HTML ol, .bubble-element.HTML li, .bubble-element.HTML span",
       ".bubble-element.CustomElement",
       ".bubble-element.Popup",
       ".clickable-element.bubble-element.Button",
@@ -358,14 +378,22 @@
     return normalizeColor(getComputedStyle(el).backgroundColor);
   }
 
+  /** Canonicalizes color strings: normalizes spacing to no-space, and rgba(r,g,b,1) → rgb(r,g,b). */
   function normalizeColor(s) {
     if (!s) return "";
     const t = String(s).trim().toLowerCase();
     if (!t) return "";
     if (t.startsWith("rgb")) {
       const inner = t.replace(/^rgba?\(|\)$/g, "").trim();
-      const normalizedInner = inner.split(/[,\s]+/).filter(Boolean).join(",");
-      return (t.startsWith("rgba") ? "rgba(" : "rgb(") + normalizedInner + ")";
+      const parts = inner.split(/[,\s]+/).filter(Boolean);
+      const normalizedInner = parts.join(",");
+      const isRgba = t.startsWith("rgba");
+      let out = (isRgba ? "rgba(" : "rgb(") + normalizedInner + ")";
+      if (isRgba && parts.length === 4) {
+        const a = parseFloat(parts[3]);
+        if (Number.isFinite(a) && a >= 1) out = "rgb(" + parts[0] + "," + parts[1] + "," + parts[2] + ")";
+      }
+      return out;
     }
     if (t.startsWith("#")) return t;
     if (t.startsWith("var(")) return t.replace(/\s+/g, "");
@@ -439,6 +467,7 @@
       CFG.classes.btnGreen,
       CFG.classes.btnOrange,
       CFG.classes.btnGray,
+      CFG.classes.btnWhite,
       CFG.classes.btnRed,
       CFG.classes.btnDark,
       CFG.classes.btnYellow,
@@ -630,6 +659,7 @@
       else if (bg === p.alert) mapped = CFG.classes.btnOrange;
       else if (bg === p.primary) mapped = CFG.classes.btnDark;
       else if (bg === p.background) mapped = CFG.classes.btnGray;
+      else if (bg === p.surface) mapped = CFG.classes.btnWhite;
       else if (bg === p.destructive || bg === p.destructiveAlt) mapped = CFG.classes.btnRed;
     }
 
@@ -655,7 +685,11 @@
       el.classList.add(CFG.classes.link);
 
       const { color } = getOriginalColor(el);
-      const isDestructive = CFG._destructiveLinkColors && CFG._destructiveLinkColors.has(color);
+      const isDestructiveColor = CFG._destructiveLinkColors && CFG._destructiveLinkColors.has(color);
+      const isPrimaryOrSecondaryText =
+        (CFG._primaryTextColors && CFG._primaryTextColors.has(color)) ||
+        (CFG._secondaryTextColors && CFG._secondaryTextColors.has(color));
+      const isDestructive = isDestructiveColor && !isPrimaryOrSecondaryText;
       const isNormal = !isDestructive && CFG._normalLinkColors && CFG._normalLinkColors.has(color);
 
       el.classList.toggle(CFG.classes.linkDestructive, isDestructive);
@@ -715,7 +749,11 @@
 
     const { color, usedComputed } = getOriginalColor(el);
 
-    const isDestructive = CFG._destructiveLinkColors && CFG._destructiveLinkColors.has(color);
+    const isDestructiveColor = CFG._destructiveLinkColors && CFG._destructiveLinkColors.has(color);
+    const isPrimaryOrSecondaryText =
+      (CFG._primaryTextColors && CFG._primaryTextColors.has(color)) ||
+      (CFG._secondaryTextColors && CFG._secondaryTextColors.has(color));
+    const isDestructive = isDestructiveColor && !isPrimaryOrSecondaryText;
     const isNormal = !isDestructive && CFG._normalLinkColors && CFG._normalLinkColors.has(color);
 
     freezeIfComputed(el, "link", "1", usedComputed);
@@ -743,7 +781,11 @@
     }
 
     const { color } = getOriginalColor(el);
-    const isDestructive = CFG._destructiveLinkColors && CFG._destructiveLinkColors.has(color);
+    const isDestructiveColor = CFG._destructiveLinkColors && CFG._destructiveLinkColors.has(color);
+    const isPrimaryOrSecondaryText =
+      (CFG._primaryTextColors && CFG._primaryTextColors.has(color)) ||
+      (CFG._secondaryTextColors && CFG._secondaryTextColors.has(color));
+    const isDestructive = isDestructiveColor && !isPrimaryOrSecondaryText;
     el.classList.toggle(CFG.classes.destructiveText, isDestructive);
   }
 
@@ -966,10 +1008,11 @@
   }
 
   function applyDarkSurfaceClass(el) {
-    if (isInChatMother(el) || (el.tagName === "BUTTON" && !isIconElement(el)) || isButtonish(el) || el.classList.contains(CFG.classes.separato) || el.classList.contains("Page")) {
+    if (isInChatMother(el) || (el.tagName === "BUTTON" && !isIconElement(el)) || el.classList.contains(CFG.classes.separato) || el.classList.contains("Page")) {
       el.classList.remove(CFG.classes.darkSurface);
       return;
     }
+    // Allow buttonish elements (e.g. dark-mode toggler) to get ws-dark-surface when bg is primary/dark
 
     const bgToken = normalizeColor(getInlineOrBubbleBg(el));
     if (bgToken && isTransparentColor(bgToken)) {
@@ -1286,13 +1329,20 @@
       if (varName) CFG._normalLinkColors.add(resolveCssVarToRgb(varName));
     }
 
+    const primaryNorm = normalizeColor(resolveCssVarToRgb("--color_primary_default") || "");
     for (const rgb of CFG.linkColors.destructive.rgb) {
       CFG._destructiveLinkColors.add(normalizeColor(rgb));
     }
     for (const token of CFG.linkColors.destructive.tokens) {
       CFG._destructiveLinkColors.add(normalizeColor(token));
       const varName = token.match(/var\(([^)]+)\)/)?.[1];
-      if (varName) CFG._destructiveLinkColors.add(resolveCssVarToRgb(varName));
+      if (varName) {
+        const resolved = resolveCssVarToRgb(varName);
+        if (resolved) {
+          const resolvedNorm = normalizeColor(resolved);
+          if (resolvedNorm !== primaryNorm) CFG._destructiveLinkColors.add(resolvedNorm);
+        }
+      }
     }
   }
 
@@ -1333,11 +1383,28 @@
     }
   }
 
+  function initPrimaryTextColors() {
+    CFG._primaryTextColors = new Set();
+
+    for (const rgb of CFG.primaryText.rgb) {
+      CFG._primaryTextColors.add(normalizeColor(rgb));
+    }
+
+    for (const token of CFG.primaryText.tokens) {
+      CFG._primaryTextColors.add(normalizeColor(token));
+      const varName = token.match(/var\(([^)]+)\)/)?.[1];
+      if (varName) {
+        CFG._primaryTextColors.add(resolveCssVarToRgb(varName));
+      }
+    }
+  }
+
   function initPalette() {
     CFG._palette = {
       alert: resolveCssVarToBg("--color_alert_default"),
       success: resolveCssVarToBg("--color_success_default"),
       background: resolveCssVarToBg("--color_background_default"),
+      surface: resolveCssVarToBg("--color_surface_default"),
       primary: resolveCssVarToBg("--color_primary_default"),
       destructive: resolveCssVarToBg("--color_destructive_default"),
       destructiveAlt: resolveCssVarToBg("--color_coEgT_default"),
@@ -1348,6 +1415,7 @@
     initDarkSurfaces();
     initLinkColors();
     initSecondaryTextColors();
+    initPrimaryTextColors();
   }
 
   function start() {
