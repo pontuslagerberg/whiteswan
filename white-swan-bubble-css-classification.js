@@ -1067,18 +1067,24 @@
     if (hasBright && el.classList.contains(CFG.classes.surfaceBrightContent)) return;
     if (hasDark && el.classList.contains(CFG.classes.darkSurfaceContent)) return;
 
+    const hasText = hasDescendantText(el);
+    if (!hasText) return;
+
     const rect = el.getBoundingClientRect();
     const meetsSize = rect.width >= 80 && rect.height >= 48;
-    const hasText = hasDescendantText(el);
-    const hasCollapsibleContent = hasText && Array.from(el.children || []).some(
-      (c) => c.nodeType === 1 && window.getComputedStyle(c).display === "none" && hasDescendantText(c)
-    );
-    const qualifies = (meetsSize && hasText) || hasCollapsibleContent;
+    const isGroupWithText = el.matches?.(".bubble-element.Group") && hasText;
+    const qualifies = meetsSize || isGroupWithText;
 
-    if (qualifies) {
-      el.classList.toggle(CFG.classes.surfaceBrightContent, hasBright);
-      el.classList.toggle(CFG.classes.darkSurfaceContent, hasDark);
+    if (!qualifies) {
+      if (!el.hasAttribute("data-wsc-content-retry")) {
+        el.setAttribute("data-wsc-content-retry", "1");
+        setTimeout(() => { el.removeAttribute("data-wsc-content-retry"); schedule(el, true); }, 150);
+      }
+      return;
     }
+
+    el.classList.toggle(CFG.classes.surfaceBrightContent, hasBright);
+    el.classList.toggle(CFG.classes.darkSurfaceContent, hasDark);
   }
 
   function applyExpandableInputClass(el) {
