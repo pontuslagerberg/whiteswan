@@ -179,7 +179,7 @@
       ".bubble-element.GroupFocus",
       ".bubble-element.group-item",
       ".bubble-element.HTML",
-      ".bubble-element.HTML p, .bubble-element.HTML h1, .bubble-element.HTML h2, .bubble-element.HTML h3, .bubble-element.HTML h4, .bubble-element.HTML h5, .bubble-element.HTML h6, .bubble-element.HTML ul, .bubble-element.HTML ol, .bubble-element.HTML li, .bubble-element.HTML span",
+      ".bubble-element.HTML p, .bubble-element.HTML h1, .bubble-element.HTML h2, .bubble-element.HTML h3, .bubble-element.HTML h4, .bubble-element.HTML h5, .bubble-element.HTML h6, .bubble-element.HTML ul, .bubble-element.HTML ol, .bubble-element.HTML li, .bubble-element.HTML span, .bubble-element.HTML a",
       ".bubble-element.CustomElement",
       ".bubble-element.Popup",
       ".clickable-element.bubble-element.Button",
