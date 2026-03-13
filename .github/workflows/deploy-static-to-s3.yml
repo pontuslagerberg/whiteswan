@@ -1,0 +1,111 @@
+# Deploy JS/CSS to S3 (minified) and invalidate CloudFront.
+# Push: deploys only changed *.js / *.css. workflow_dispatch: optional "Deploy all" to seed bucket.
+# Required: GitHub secrets AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+# Required: GitHub variables AWS_S3_BUCKET, AWS_CLOUDFRONT_DISTRIBUTION_ID
+# Optional: AWS_S3_PREFIX (e.g. cdn) if using an existing bucket with a prefix
+
+name: Deploy static assets to S3 + CloudFront
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '*.js'
+      - '*.css'
+  workflow_dispatch:
+    inputs:
+      deploy_all:
+        description: 'Deploy all JS/CSS (ignore changed files)'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: deploy-s3-cf
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get JS/CSS files to deploy
+        id: files
+        run: |
+          DEPLOY_ALL="${{ github.event.inputs.deploy_all }}"
+          if [ "$DEPLOY_ALL" = "true" ]; then
+            FILES=$(git ls-files | grep -E '\.(js|css)$' || true)
+          else
+            if [ -n "${{ github.event.before }}" ]; then
+              FILES=$(git diff --name-only --diff-filter=ACMR "${{ github.event.before }}" HEAD | grep -E '\.(js|css)$' || true)
+            else
+              FILES=$(git ls-files | grep -E '\.(js|css)$' || true)
+            fi
+          fi
+          if [ -z "$FILES" ]; then
+            echo "files=" >> $GITHUB_OUTPUT
+            echo "has_files=false" >> $GITHUB_OUTPUT
+          else
+            echo "files<<EOF" >> $GITHUB_OUTPUT
+            echo "$FILES" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            echo "has_files=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Configure AWS
+        if: steps.files.outputs.has_files == 'true'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+
+      - name: Setup Node for minification
+        if: steps.files.outputs.has_files == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Minify and upload assets
+        if: steps.files.outputs.has_files == 'true'
+        env:
+          BUCKET: ${{ vars.AWS_S3_BUCKET }}
+          PREFIX: ${{ vars.AWS_S3_PREFIX }}
+        run: |
+          P="${PREFIX:-}"
+          [ -n "$P" ] && P="${P%/}/"
+          mkdir -p .minified
+          echo "${{ steps.files.outputs.files }}" | while IFS= read -r f; do
+            [ -z "$f" ] || [ ! -f "$f" ] && continue
+            dir=".minified/$(dirname "$f")"
+            mkdir -p "$dir"
+            s3_key="${P}${f}"
+            if [[ "$f" == *.js ]]; then
+              npx --yes terser "$f" --compress passes=2 --mangle -o ".minified/$f"
+              aws s3 cp ".minified/$f" "s3://${BUCKET}/${s3_key}" --content-type "application/javascript" --cache-control "public, max-age=86400"
+            else
+              npx --yes clean-css-cli -o ".minified/$f" "$f"
+              aws s3 cp ".minified/$f" "s3://${BUCKET}/${s3_key}" --content-type "text/css" --cache-control "public, max-age=86400"
+            fi
+            echo "Uploaded $s3_key"
+          done
+
+      - name: Invalidate CloudFront
+        if: steps.files.outputs.has_files == 'true'
+        env:
+          DIST_ID: ${{ vars.AWS_CLOUDFRONT_DISTRIBUTION_ID }}
+        run: |
+          aws cloudfront create-invalidation --distribution-id "$DIST_ID" --paths "/*"
+          echo "Invalidation created."
+
+      - name: Summary
+        if: steps.files.outputs.has_files == 'true'
+        run: |
+          echo "Deployed to S3 + CloudFront:"
+          echo "${{ steps.files.outputs.files }}" | tr ' ' '\n' | grep -v '^$'
+          echo ""
+          echo "Base URL: CloudFront distribution domain or custom domain (e.g. https://assets.whiteswan.io/)"
+          echo "Example: https://assets.whiteswan.io/white-swan-bubble-css-classification.js"
