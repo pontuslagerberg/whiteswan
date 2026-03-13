@@ -356,7 +356,19 @@
   }
 
   function getInlineOrBubbleBg(el) {
-    const bgc = getInlineValue(el, "background-color");
+    let bgc = getInlineValue(el, "background-color");
+    if (!bgc) {
+      const styleAttr = el.getAttribute?.("style") || "";
+      let m = styleAttr.match(/background-color\s*:\s*([^;]+)/i);
+      if (m) bgc = m[1].trim();
+      if (!bgc) {
+        m = styleAttr.match(/background\s*:\s*([^;]+)/i);
+        if (m) {
+          const bgMatch = m[1].match(/(var\([^)]+\)|rgba?\([^)]+\))/);
+          if (bgMatch) bgc = bgMatch[1].trim();
+        }
+      }
+    }
     if (bgc) return bgc;
     const bg = getInlineValue(el, "background");
     if (bg) {
@@ -660,10 +672,15 @@
 
     // CSS var substring matching (handles vars inside rgba(), etc.)
     if (!mapped) {
-      const bgStr = (getInlineValue(el, "background-color") + getInlineValue(el, "background")).toLowerCase();
+      let bgStr = (getInlineValue(el, "background-color") + getInlineValue(el, "background")).toLowerCase();
+      if (!bgStr) bgStr = (el.getAttribute?.("style") || "").toLowerCase();
       for (const [varSub, cls] of Object.entries(CFG.bgVarSubstringToClass)) {
         if (bgStr.includes(varSub)) { mapped = cls; break; }
       }
+    }
+
+    if (!mapped && (bgToken === "rgb(255,255,255)" || bg === "rgb(255,255,255)")) {
+      mapped = CFG.classes.btnWhite;
     }
 
     if (!mapped && p) {
