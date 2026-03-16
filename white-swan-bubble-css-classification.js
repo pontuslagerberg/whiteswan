@@ -1297,9 +1297,12 @@
         applyFontClasses(el);
       }
 
-      applySurfaceClasses(el);
-      applyDarkSurfaceClass(el);
-      applyContentSurfaceClasses(el);
+      const hasSurface = el.classList.contains(CFG.classes.surfaceBright) || el.classList.contains(CFG.classes.darkSurface);
+      if (!hasSurface) {
+        applySurfaceClasses(el);
+        applyDarkSurfaceClass(el);
+        applyContentSurfaceClasses(el);
+      }
 
       if (getFrozen(el, "is-link") !== "1") {
         applyButtonClasses(el);
