@@ -853,26 +853,15 @@
 
     // Only classify elements that explicitly set a non-transparent background
     const bgToken = normalizeColor(getInlineOrBubbleBg(el));
-    if (bgToken && isTransparentColor(bgToken)) {
+    const resolved = normalizeColor(getComputedStyle(el).backgroundColor);
+    const bg = bgToken || resolved;
+
+    if (!bg || isTransparentColor(bg)) {
       el.classList.remove(CFG.classes.surfaceBright);
       return;
     }
 
-    let isBright = false;
-
-    if (bgToken) {
-      // Prefer the explicit inline/Bubble background when present.
-      isBright = CFG._brightBgSet.has(bgToken) || isColorBright(bgToken);
-    }
-
-    if (!isBright) {
-      const resolved = normalizeColor(getComputedStyle(el).backgroundColor);
-      if (!resolved || isTransparentColor(resolved)) {
-        el.classList.remove(CFG.classes.surfaceBright);
-        return;
-      }
-      isBright = CFG._brightBgSet.has(resolved) || isColorBright(resolved);
-    }
+    const isBright = CFG._brightBgSet.has(bg) || isColorBright(bg);
 
     const rect = el.getBoundingClientRect();
     const meetsMinSize = rect.width >= 40 && rect.height >= 40;
@@ -1046,22 +1035,15 @@
     // Allow buttonish elements (e.g. dark-mode toggler) to get ws-dark-surface when bg is primary/dark
 
     const bgToken = normalizeColor(getInlineOrBubbleBg(el));
-    if (bgToken && isTransparentColor(bgToken)) {
+    const resolved = normalizeColor(getComputedStyle(el).backgroundColor);
+    const bg = bgToken || resolved;
+
+    if (!bg || isTransparentColor(bg)) {
       el.classList.remove(CFG.classes.darkSurface);
       return;
     }
 
-    let isDark = bgToken ? CFG._darkBgSet.has(bgToken) : false;
-
-    if (!isDark) {
-      const resolved = normalizeColor(getComputedStyle(el).backgroundColor);
-      if (!resolved || isTransparentColor(resolved)) {
-        el.classList.remove(CFG.classes.darkSurface);
-        return;
-      }
-      isDark = CFG._darkBgSet.has(resolved) || isColorDark(resolved);
-    }
-
+    const isDark = CFG._darkBgSet.has(bg) || isColorDark(bg);
     el.classList.toggle(CFG.classes.darkSurface, isDark);
   }
 
