@@ -1297,6 +1297,10 @@
         applyFontClasses(el);
       }
 
+      applySurfaceClasses(el);
+      applyDarkSurfaceClass(el);
+      applyContentSurfaceClasses(el);
+
       if (getFrozen(el, "is-link") !== "1") {
         applyButtonClasses(el);
       }
