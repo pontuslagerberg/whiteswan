@@ -1327,6 +1327,9 @@
         }
       } else if (m.type === "attributes") {
         schedule(m.target);
+        // When visibility is controlled by a sibling (e.g. :has()), the mutation is on the sibling.
+        // Schedule parent so we process its subtree when any child's style/class changes.
+        if (m.target.parentElement) schedule(m.target.parentElement);
       }
     }
     if (stylesAdded) buildBubbleRuleCache();
