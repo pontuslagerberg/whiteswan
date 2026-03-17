@@ -250,16 +250,19 @@
     return false;
   }
 
-  function processElementAndMaybeSubtree(root) {
-    if (isHidden(root)) return;
+  const FONT_BEARING_SELECTOR = ".bubble-element.Text, .bubble-element.HTML, .bubble-element.HTML p, .bubble-element.HTML h1, .bubble-element.HTML h2, .bubble-element.HTML h3, .bubble-element.HTML h4, .bubble-element.HTML h5, .bubble-element.HTML h6, .bubble-element.HTML ul, .bubble-element.HTML ol, .bubble-element.HTML li, .bubble-element.HTML span, .bubble-element.HTML a, .ql-editor[contenteditable]";
 
-    if (root.matches?.(CFG.scanSelector)) processOne(root);
+  function processElementAndMaybeSubtree(root) {
+    if (!root.isConnected) return;
+
+    if (!isHidden(root) && root.matches?.(CFG.scanSelector)) processOne(root);
 
     const nodes = root.querySelectorAll?.(CFG.scanSelector);
     if (!nodes || nodes.length === 0) return;
 
     for (const el of nodes) {
-      if (!isHidden(el)) processOne(el);
+      const visibleOrFontBearing = !isHidden(el) || el.matches?.(FONT_BEARING_SELECTOR);
+      if (visibleOrFontBearing) processOne(el);
     }
   }
 
