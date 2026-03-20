@@ -490,46 +490,6 @@
   function clearAllButtonClasses(el) {
     el.classList.remove(CFG.classes.btn, CFG.classes.btnOutline);
     clearButtonVariantClasses(el);
-    clearNestedButtonShellClasses(el);
-  }
-
-  /** Classes copied from a pill/shell `.ws-btn` to nested Bubble icon `<button>`s so theme + `svg:not(.ws-btn svg)` rules apply. */
-  function getButtonShellClassList() {
-    return [
-      CFG.classes.btn,
-      CFG.classes.btnOutline,
-      CFG.classes.btnGreen,
-      CFG.classes.btnOrange,
-      CFG.classes.btnGray,
-      CFG.classes.btnWhite,
-      CFG.classes.btnRed,
-      CFG.classes.btnDark,
-      CFG.classes.btnYellow,
-      CFG.classes.btnGradient,
-      CFG.classes.btnTransparent,
-    ];
-  }
-
-  function clearNestedButtonShellClasses(shellEl) {
-    const shell = getButtonShellClassList();
-    for (const btn of shellEl.querySelectorAll("button.bubble-element")) {
-      if (btn === shellEl) continue;
-      for (const c of shell) btn.classList.remove(c);
-    }
-  }
-
-  function syncNestedButtonShellClasses(shellEl) {
-    if (!shellEl.classList.contains(CFG.classes.btn)) {
-      clearNestedButtonShellClasses(shellEl);
-      return;
-    }
-    const shell = getButtonShellClassList();
-    const active = shell.filter(c => shellEl.classList.contains(c));
-    for (const btn of shellEl.querySelectorAll("button.bubble-element")) {
-      if (btn === shellEl) continue;
-      for (const c of shell) btn.classList.remove(c);
-      for (const c of active) btn.classList.add(c);
-    }
   }
 
   function applyFontClasses(el) {
@@ -651,16 +611,6 @@
 
   function applyButtonClasses(el) {
     if (!isButtonish(el)) {
-      // Nested `button.Icon` inside a classified pill is not "buttonish" itself, but receives
-      // `ws-btn` / variant via syncNestedButtonShellClasses — do not strip those.
-      if (
-        el.tagName === "BUTTON" &&
-        el.matches?.(".bubble-element") &&
-        el.closest?.("." + CFG.classes.btn) &&
-        el !== el.closest("." + CFG.classes.btn)
-      ) {
-        return "";
-      }
       clearAllButtonClasses(el);
       return "";
     }
@@ -672,7 +622,6 @@
       el.classList.add(CFG.classes.btnOrange);
       el.classList.remove(CFG.classes.btnOutline);
       freezeIfComputed(el, "btn-variant", CFG.classes.btnOrange, false);
-      syncNestedButtonShellClasses(el);
       return "BTN:bad-revision:orange:";
     }
 
@@ -691,7 +640,6 @@
       el.classList.add(CFG.classes.btnGradient);
       el.classList.remove(CFG.classes.btnOutline);
       freezeIfComputed(el, "btn-variant", CFG.classes.btnGradient, false);
-      syncNestedButtonShellClasses(el);
       return "BTN:gradient:";
     }
 
@@ -708,11 +656,9 @@
         const isOutline = el.getAttribute("data-outline") === "true" || hasVisibleBorder(el);
         el.classList.toggle(CFG.classes.btnOutline, isOutline);
         freezeIfComputed(el, "btn-variant", CFG.classes.btnTransparent, false);
-        syncNestedButtonShellClasses(el);
         return "BTN:transparent:" + (isOutline ? "O" : "");
       }
       // Divs and icon buttons: skip transparent class + color mapping — no visible bg
-      syncNestedButtonShellClasses(el);
       return "BTN:skip-transparent";
     }
 
@@ -758,8 +704,6 @@
 
     el.classList.remove(CFG.classes.btnOutline);
     freezeIfComputed(el, "btn-variant", mapped, usedComputedBg);
-
-    syncNestedButtonShellClasses(el);
 
     return "BTN:" + (mapped || "none") + ":";
   }
