@@ -665,6 +665,17 @@
       return "";
     }
 
+    // Bubble hard-refresh banner — unique `.bad-revision` class; always orange (alert) button.
+    if (el.matches?.(".bad-revision")) {
+      el.classList.add(CFG.classes.btn);
+      clearButtonVariantClasses(el);
+      el.classList.add(CFG.classes.btnOrange);
+      el.classList.remove(CFG.classes.btnOutline);
+      freezeIfComputed(el, "btn-variant", CFG.classes.btnOrange, false);
+      syncNestedButtonShellClasses(el);
+      return "BTN:bad-revision:orange:";
+    }
+
     const frozenVariant = getFrozen(el, "btn-variant");
     if (frozenVariant) {
       el.classList.add(CFG.classes.btn);
