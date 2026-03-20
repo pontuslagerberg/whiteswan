@@ -702,18 +702,44 @@
     return { color, usedComputed: true };
   }
 
+  /**
+   * True when Bubble designer styles (inline or .b-root .bubble-element.{id} rule) use a
+   * destructive color token. Needed because: (1) initLinkColors skips resolved rgb when it equals
+   * primary; (2) inline color can hide bubble rule in getResolvedValue but we still want semantic
+   * destructive when the class rule uses var(--color_destructive_default).
+   */
+  function destructiveColorTokenFromAuthor(el) {
+    const raw = (getInlineValue(el, "color") + " " + getBubbleRuleValue(el, "color")).toLowerCase();
+    if (!raw.trim()) return false;
+    for (const token of CFG.linkColors.destructive.tokens) {
+      const m = String(token).match(/var\(([^)]+)\)/);
+      if (!m) continue;
+      const varName = m[1].replace(/\s+/g, "").toLowerCase();
+      if (raw.includes(varName)) return true;
+    }
+    return false;
+  }
+
+  function linkDestructiveAndNormal(el, color) {
+    const isDestructiveColor = CFG._destructiveLinkColors && CFG._destructiveLinkColors.has(color);
+    const isPrimaryOrSecondaryText =
+      (CFG._primaryTextColors && CFG._primaryTextColors.has(color)) ||
+      (CFG._secondaryTextColors && CFG._secondaryTextColors.has(color));
+    const fromAuthorToken = destructiveColorTokenFromAuthor(el);
+    const isDestructive =
+      fromAuthorToken || (isDestructiveColor && !isPrimaryOrSecondaryText);
+    const isNormal =
+      !isDestructive && CFG._normalLinkColors && CFG._normalLinkColors.has(color);
+    return { isDestructive, isNormal };
+  }
+
   function applyLinkClasses(el) {
     const frozenIsLink = getFrozen(el, "link");
     if (frozenIsLink === "1") {
       el.classList.add(CFG.classes.link);
 
       const { color } = getOriginalColor(el);
-      const isDestructiveColor = CFG._destructiveLinkColors && CFG._destructiveLinkColors.has(color);
-      const isPrimaryOrSecondaryText =
-        (CFG._primaryTextColors && CFG._primaryTextColors.has(color)) ||
-        (CFG._secondaryTextColors && CFG._secondaryTextColors.has(color));
-      const isDestructive = isDestructiveColor && !isPrimaryOrSecondaryText;
-      const isNormal = !isDestructive && CFG._normalLinkColors && CFG._normalLinkColors.has(color);
+      const { isDestructive, isNormal } = linkDestructiveAndNormal(el, color);
 
       el.classList.toggle(CFG.classes.linkDestructive, isDestructive);
       el.classList.toggle(CFG.classes.linkNormal, isNormal);
@@ -745,6 +771,7 @@
       const { color: c } = getOriginalColor(el);
 
       const looksLikeLinkColor =
+        destructiveColorTokenFromAuthor(el) ||
         (CFG._normalLinkColors && CFG._normalLinkColors.has(c)) ||
         (CFG._destructiveLinkColors && CFG._destructiveLinkColors.has(c));
 
@@ -769,12 +796,7 @@
 
     const { color, usedComputed } = getOriginalColor(el);
 
-    const isDestructiveColor = CFG._destructiveLinkColors && CFG._destructiveLinkColors.has(color);
-    const isPrimaryOrSecondaryText =
-      (CFG._primaryTextColors && CFG._primaryTextColors.has(color)) ||
-      (CFG._secondaryTextColors && CFG._secondaryTextColors.has(color));
-    const isDestructive = isDestructiveColor && !isPrimaryOrSecondaryText;
-    const isNormal = !isDestructive && CFG._normalLinkColors && CFG._normalLinkColors.has(color);
+    const { isDestructive, isNormal } = linkDestructiveAndNormal(el, color);
 
     freezeIfComputed(el, "link", "1", usedComputed);
     setFrozen(el, "link-destructive", isDestructive ? "1" : "0");
@@ -1294,6 +1316,10 @@
 
     // ── VOLATILE: only truly dynamic concerns on subsequent style changes ──
     if (sigChanged) {
+      if (getFrozen(el, "is-link") === "1") {
+        applyLinkClasses(el);
+      }
+
       if (isClickContext(el) || el.matches?.(".bubble-element.Text")) {
         applyFontClasses(el);
       }
