@@ -112,6 +112,10 @@
       "--color_surface_default": "ws-btn--white",
       "--color_success_default": "ws-btn--green",
       "--color_success_default_rgb": "ws-btn--green",
+      "--color_alert_default": "ws-btn--orange",
+      "--color_alert_default_rgb": "ws-btn--orange",
+      "--color_warning_default": "ws-btn--orange",
+      "--color_warning_default_rgb": "ws-btn--orange",
     },
 
     brightSurface: {
