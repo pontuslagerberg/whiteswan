@@ -256,15 +256,107 @@
 
   function processElementAndMaybeSubtree(root) {
     if (!root.isConnected) return;
-    if (isHidden(root)) return;
+    // SVG graphics (e.g. ApexCharts <text>) often have offsetParent === null while still visible.
+    const insideApexCanvas = root.nodeType === 1 && !!root.closest?.(".apexcharts-canvas");
+    if (!insideApexCanvas && isHidden(root)) return;
 
     if (root.matches?.(CFG.scanSelector)) processOne(root);
 
     const nodes = root.querySelectorAll?.(CFG.scanSelector);
-    if (!nodes || nodes.length === 0) return;
+    if (nodes && nodes.length > 0) {
+      for (const el of nodes) {
+        if (!isHidden(el)) processOne(el);
+      }
+    }
 
-    for (const el of nodes) {
-      if (!isHidden(el)) processOne(el);
+    // ApexCharts (and similar) render axis/legend labels as SVG <text>, not .bubble-element.Text.
+    processApexChartsTypography(root);
+  }
+
+  /** SVG <text> uses presentation attributes; offsetParent-based isHidden() is unreliable for SVG. */
+  function shouldProcessApexSvgText(el) {
+    const svg = el.ownerSVGElement;
+    if (!svg || !svg.isConnected) return false;
+    const cs = getComputedStyle(svg);
+    return cs.display !== "none" && cs.visibility !== "hidden";
+  }
+
+  function svgTextPresentation(el, prop) {
+    if (el.tagName !== "text" || el.namespaceURI !== "http://www.w3.org/2000/svg") return "";
+    const fromAttr = el.getAttribute(prop);
+    if (fromAttr) return String(fromAttr).trim();
+    return getInlineValue(el, prop);
+  }
+
+  /** Classify Campton / font-weight on ApexCharts SVG labels (same ws-font-bold / ws-font-light as Bubble text). */
+  function applyFontClassesToSvgText(el) {
+    if (el.tagName !== "text" || el.namespaceURI !== "http://www.w3.org/2000/svg") return;
+
+    if (el.classList.contains("bold_p") || el.closest?.(".bold_p")) {
+      el.classList.add(CFG.classes.fontBold);
+      el.classList.remove(CFG.classes.fontLight);
+      setFrozen(el, "font", "bold");
+      return;
+    }
+
+    const hasInlineFont = !!svgTextPresentation(el, "font-family");
+    const frozen = getFrozen(el, "font");
+    if (frozen && !hasInlineFont) {
+      if (frozen === "bold") {
+        el.classList.add(CFG.classes.fontBold);
+        el.classList.remove(CFG.classes.fontLight);
+        return;
+      }
+    }
+
+    const fontClasses = [CFG.classes.fontBold, CFG.classes.fontLight];
+    const had = fontClasses.filter(c => el.classList.contains(c));
+    for (const c of had) el.classList.remove(c);
+
+    let ffRaw = svgTextPresentation(el, "font-family");
+    let fwRaw = svgTextPresentation(el, "font-weight");
+    const cs = getComputedStyle(el);
+    if (!ffRaw) ffRaw = cs.fontFamily || "";
+    if (!fwRaw) fwRaw = cs.fontWeight || "";
+
+    for (const c of had) el.classList.add(c);
+
+    const usedComputed = !svgTextPresentation(el, "font-family") && !svgTextPresentation(el, "font-weight");
+
+    const ff = normalizeFontFamily(ffRaw).toLowerCase();
+    const fw = String(fwRaw).trim().toLowerCase();
+    const boldKey = CFG.fonts.bold.toLowerCase();
+    const fwNum = parseInt(fw, 10);
+    const isBold =
+      ff.includes(boldKey) ||
+      fw === "bold" ||
+      (Number.isFinite(fwNum) && fwNum >= 600);
+    const isLight =
+      !isBold && (
+        ff.includes("campton lighter") ||
+        ff.includes("var(--font_default)") ||
+        ff.includes("--font_default") ||
+        (Number.isFinite(fwNum) && fwNum > 0 && fwNum < 600) ||
+        fw === "normal" ||
+        fw === ""
+      );
+
+    el.classList.toggle(CFG.classes.fontBold, isBold);
+    el.classList.toggle(CFG.classes.fontLight, isLight);
+    freezeIfComputed(el, "font", isBold ? "bold" : (isLight ? "light" : ""), usedComputed);
+  }
+
+  function processApexChartsTypography(root) {
+    if (!root || root.nodeType !== 1) return;
+    const canvases = new Set();
+    const direct = root.closest?.(".apexcharts-canvas");
+    if (direct) canvases.add(direct);
+    root.querySelectorAll?.(".apexcharts-canvas").forEach(c => canvases.add(c));
+    for (const canvas of canvases) {
+      for (const t of canvas.querySelectorAll("text")) {
+        if (!shouldProcessApexSvgText(t)) continue;
+        applyFontClassesToSvgText(t);
+      }
     }
   }
 
