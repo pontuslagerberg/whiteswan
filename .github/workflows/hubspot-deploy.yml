@@ -1,0 +1,56 @@
+# Upload + deploy HubSpot developer project when app files change.
+#
+# Required GitHub secrets (repository → Settings → Secrets):
+#   HUBSPOT_ACCOUNT_ID          — numeric account ID (HubSpot developer account)
+#   HUBSPOT_PERSONAL_ACCESS_KEY — personal access key with project deploy scope
+#
+# Create a key: https://developers.hubspot.com/docs/guides/cms/tools/personal-access-key
+#
+# Optional: pin CLI with repo variable DEFAULT_CLI_VERSION (e.g. 8.0.0) per HubSpot docs.
+
+name: HubSpot project upload + deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'hubspot-white-swan-app/**'
+      - '.github/workflows/hubspot-deploy.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: hubspot-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      DEFAULT_ACCOUNT_ID: ${{ secrets.HUBSPOT_ACCOUNT_ID }}
+      DEFAULT_PERSONAL_ACCESS_KEY: ${{ secrets.HUBSPOT_PERSONAL_ACCESS_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install card dependencies (npm ci)
+        working-directory: "hubspot-white-swan-app/White Swan Integration/src/app/cards"
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+
+      - name: HubSpot project upload
+        id: upload
+        uses: HubSpot/hubspot-project-actions/project-upload@v1.1.0
+        with:
+          project_dir: "hubspot-white-swan-app/White Swan Integration"
+
+      - name: HubSpot project deploy
+        uses: HubSpot/hubspot-project-actions/project-deploy@v1.1.0
+        with:
+          build_id: ${{ steps.upload.outputs.build_id }}
+          project_dir: "hubspot-white-swan-app/White Swan Integration"

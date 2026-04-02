@@ -2,7 +2,18 @@
 
 This file lives at the repo root so it stays tracked while the `White Swan AI/` directory is gitignored (see `.gitignore`). Use it when pausing or restoring ECS / Aurora / ALB without hunting through local-only folders.
 
-**Account / region (from live AWS checks):** `us-east-1` · REST API `n7kcm45my8` · ALB DNS `white-swan-alb-2129047376.us-east-1.elb.amazonaws.com`
+**Account / region:** `us-east-1` · REST API `n7kcm45my8`
+
+---
+
+## Cleanup applied (2026-04-02)
+
+- **ECS:** Services `portkey-gateway-service` and `white-swan-langgraph-orchestration` were **deleted** (cluster `white-swan-cluster` may still exist empty). Fargate charges for those services stop.
+- **ALB:** `white-swan-alb` and target group `white-swan-langgraph-tg` were **deleted**.
+- **Aurora:** Cluster `white-swan-aurora-serverless` was removed after a **manual cluster snapshot** for restore: **`white-swan-aurora-final-2026-04-02`**. (Deletion protection was disabled first.) **`aurora-handler`** and **`GET /health`** on `n7kcm45my8` will fail until you restore a DB or change integrations.
+- **Unchanged:** **`white-swan-api-proxy`** and **`white-swan-image-trim`** Lambdas have **no VPC** attachment; they keep working independently of the above.
+
+**VPC:** We did **not** delete the default VPC or subnets (shared network; Lambdas/API Gateway don’t require tearing it down). Review **Elastic IPs** and **NAT Gateways** separately if you still see “VPC”/IPv4 charges.
 
 ---
 
@@ -111,7 +122,7 @@ done
 
 ## HubSpot app location
 
-The HubSpot project now lives at **`hubspot-white-swan-app/`** (repo root). It is **not** under `White Swan AI/`. Deploy via HubSpot CLI from `hubspot-white-swan-app/White Swan Integration/` — see `hubspot-white-swan-app/README.md`. This repository does not include a separate GitHub Actions workflow for HubSpot deploys.
+The HubSpot project lives at **`hubspot-white-swan-app/`** (repo root). Deploy via HubSpot CLI from `hubspot-white-swan-app/White Swan Integration/` — see `hubspot-white-swan-app/README.md`. **CI:** `.github/workflows/hubspot-deploy.yml` (requires secrets `HUBSPOT_ACCOUNT_ID`, `HUBSPOT_PERSONAL_ACCESS_KEY`).
 
 ---
 
