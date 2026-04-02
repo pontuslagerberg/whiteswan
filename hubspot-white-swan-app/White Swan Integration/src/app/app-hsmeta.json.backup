@@ -1,0 +1,41 @@
+{
+  "uid": "white_swan_app",
+  "type": "app",
+  "config": {
+    "description": "White Swan makes it easy to digitize insurance sales.",
+    "name": "White Swan",
+    "distribution": "private",
+    "logo": "/app/logo.png",
+    "auth": {
+      "type": "oauth",
+      "redirectUrls": [
+        "https://app.whiteswan.io/api/1.1/oauth_redirect",
+        "https://app.whiteswan.io/version-test/api/1.1/oauth_redirect"
+      ],
+      "requiredScopes": [
+        "oauth",
+        "crm.objects.contacts.read",
+        "crm.objects.contacts.write",
+        "crm.objects.companies.read",
+        "crm.objects.companies.write",
+        "crm.objects.deals.read",
+        "crm.objects.deals.write",
+        "crm.objects.leads.read",
+        "crm.objects.leads.write"
+      ],
+      "optionalScopes": [],
+      "conditionallyRequiredScopes": []
+    },
+    "permittedUrls": {
+      "fetch": ["https://api.hubapi.com"],
+      "iframe": [],
+      "img": []
+    },
+    "support": {
+      "supportEmail": "support@whiteswan.io",
+      "documentationUrl": "https://docs.whiteswan.io",
+      "supportUrl": "https://whiteswan.io/contact-us",
+      "supportPhone": "+14012179551"
+    }
+  }
+}

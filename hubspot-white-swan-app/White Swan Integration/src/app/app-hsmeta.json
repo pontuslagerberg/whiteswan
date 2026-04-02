@@ -1,0 +1,58 @@
+{
+  "uid": "white_swan_app",
+  "type": "app",
+  "config": {
+    "description": "White Swan makes it easy to digitize insurance sales.",
+    "name": "White Swan",
+    "distribution": "private",
+    "logo": "/app/logo.png",
+    "auth": {
+      "type": "oauth",
+      "redirectUrls": [
+        "https://app.whiteswan.io/test",
+        "https://app.whiteswan.io/version-test/test",
+        "https://app.whiteswan.io/partner_integrations",
+        "https://app.whiteswan.io/version-test/partner_integrations"
+      ],
+      "requiredScopes": [
+        "oauth",
+        "crm.objects.contacts.read",
+        "crm.objects.contacts.write",
+        "crm.objects.companies.read",
+        "crm.objects.companies.write",
+        "crm.objects.deals.read",
+        "crm.objects.deals.write",
+        "crm.objects.leads.read",
+        "crm.objects.leads.write",
+        "crm.schemas.companies.write",
+        "crm.schemas.contacts.write",
+        "crm.schemas.companies.read",
+        "crm.schemas.contacts.read",
+        "crm.objects.owners.read",
+        "scheduler.meetings.meeting-link.read",
+        "crm.lists.write",
+        "cms.membership.access_groups.write",
+        "crm.lists.read",
+        "tickets",
+        "conversations.custom_channels.read",
+        "conversations.custom_channels.write",
+        "files",
+        "conversations.read"
+      ],
+      "optionalScopes": [
+    ],
+      "conditionallyRequiredScopes": []
+    },
+    "permittedUrls": {
+      "fetch": ["https://api.hubapi.com"],
+      "iframe": [],
+      "img": []
+    },
+    "support": {
+      "supportEmail": "support@whiteswan.io",
+      "documentationUrl": "https://docs.whiteswan.io",
+      "supportUrl": "https://whiteswan.io/contact-us",
+      "supportPhone": "+14012179551"
+    }
+  }
+}

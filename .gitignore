@@ -3,3 +3,5 @@ ignore/*
 # But keep the folder itself tracked (via .gitkeep)
 !ignore/.gitkeep
 
+# Local White Swan AI workspace (experiments, large deps, docs with account IDs — do not commit wholesale)
+White Swan AI/
