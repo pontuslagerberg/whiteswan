@@ -14,6 +14,6 @@
   window.__WS_parentLoaderInjected = true;
 
   const s = document.createElement('script');
-  s.src = 'https://cdn.jsdelivr.net/gh/pontuslagerberg/whiteswan@latest/ws_iframe_parent_loader.js';
+  s.src = 'https://assets.whiteswan.io/ws_iframe_parent_loader.js';
   document.head.appendChild(s);
 })();

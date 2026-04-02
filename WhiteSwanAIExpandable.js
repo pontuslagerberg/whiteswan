@@ -2,9 +2,9 @@
     // White Swan AI Expandable Chat Integration
     // Updated: Improved cache purging workflow
     var CSS_URL =
-      "https://cdn.jsdelivr.net/gh/pontuslagerberg/whiteswan@latest/chat_expandable_embed.css";
+      "https://assets.whiteswan.io/chat_expandable_embed.css";
     var PRO_EMBED_URL =
-      "https://cdn.jsdelivr.net/gh/pontuslagerberg/whiteswan@latest/professional_embed.js";
+      "https://assets.whiteswan.io/professional_embed.js";
 
     function loadCssOnce(href) {
       var existing = document.querySelector(
