@@ -33,7 +33,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2  # need previous commit for git diff on push
+          fetch-depth: 10  # enough history so event.before is reachable even when several commits are pushed at once
 
       - name: Get JS/CSS files to deploy
         id: files
@@ -109,7 +109,8 @@ jobs:
               all_ok=true
               while IFS= read -r f; do
                 [ -z "$f" ] && continue
-                url="${BASE_URL%/}/${f}"
+                encoded_f=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1], safe='/'))" "$f")
+                url="${BASE_URL%/}/${encoded_f}"
                 local_file=".minified/$f"
                 verify_one "$f" "$url" "$local_file" || all_ok=false
               done <<< "$FILES"
