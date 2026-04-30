@@ -609,11 +609,6 @@
       el.classList.remove(CFG.classes.fontBold);
       setFrozen(el, "font", "light");
       return "L:tippy";
-      if (frozen === "light") {
-        el.classList.add(CFG.classes.fontLight);
-        el.classList.remove(CFG.classes.fontBold);
-        return "L*";
-      }
     }
 
     let ffRaw = getResolvedValue(el, "font-family", { clean: true });
@@ -990,7 +985,7 @@
       return;
     }
 
-    const isBright = CFG._brightBgSet.has(bg) || isColorBright(bg);
+    let isBright = CFG._brightBgSet.has(bg) || isColorBright(bg);
 
     const rect = el.getBoundingClientRect();
     const meetsMinSize = rect.width >= 40 && rect.height >= 40;
