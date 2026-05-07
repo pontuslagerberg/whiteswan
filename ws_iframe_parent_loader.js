@@ -150,6 +150,18 @@
     if (!iframe) return; // not ours
 
     let state = wsEmbeds.get(childWindow);
+
+    if (state && state.originAcked) {
+      // Already handshaked — send origin once as courtesy without resetting state
+      // or starting a new retry loop. Handles the case where the child re-announces
+      // READY after a page reload or Bubble internal navigation.
+      state.iframe = iframe;
+      state.targetOrigin = event.origin || state.targetOrigin || '*';
+      console.log('[WhiteSwan Parent] READY from child (already ACKed) — sending origin once');
+      sendOriginFor(state);
+      return;
+    }
+
     if (!state) {
       state = {
         iframe,
@@ -288,18 +300,31 @@
         const chat = isChatIframe(el);
         const direction = chat ? 'both' : 'vertical';
 
+        const resizerOpts = {
+          direction,
+          license: 'GPLv3',
+          checkOrigin: false,
+          warningTimeout: 20000,
+        };
         try {
-          resize(
-            {
-              direction,
-              license: 'GPLv3',
-              checkOrigin: false,
-              warningTimeout: 20000, // Give child 20s to respond before warning
-            },
-            el
-          );
+          resize(resizerOpts, el);
           el.dataset.wsIframeResized = 'true';
           console.log('[WhiteSwan Parent] ✓ iframeResize attached:', logIframeInfo('attached', el));
+
+          // Re-attach iframeResize whenever the child page reloads (e.g. after a 401,
+          // Bubble session reset, or any other navigation inside the iframe).
+          el.addEventListener('load', function () {
+            console.log('[WhiteSwan Parent] iframe reloaded — re-attaching iframeResize:', el.id || el.className || '(no id)');
+            try {
+              // Cleanly close the previous session if iframeResizer exposes the API
+              if (el.iframeResizer && typeof el.iframeResizer.close === 'function') {
+                el.iframeResizer.close();
+              }
+              resize(resizerOpts, el);
+            } catch (err) {
+              console.error('[WhiteSwan Parent] iframeResize re-attach failed:', logIframeInfo('reload-error', el), err);
+            }
+          });
         } catch (e) {
           console.error(
             '[WhiteSwan Parent] iframeResize failed for element:',
