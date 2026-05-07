@@ -400,15 +400,21 @@
   const frameSelector = WS_IFRAME_SELECTORS.join(',');
 
   const resizeWatcher = new MutationObserver(function (mutationList) {
+    // Fast path: nothing to do once every tracked iframe is initialized.
+    // This makes style-attribute mutations during Webflow animations essentially free.
+    if (!getTrackedIframes().some(function (el) { return el.dataset.wsIframeResized !== 'true'; })) return;
+
     let shouldRun = false;
     let triggerReason = '';
 
     for (const mutation of mutationList) {
-      // Handle attribute changes (e.g., class added to existing iframe)
+      // Handle attribute changes (class/id/style on iframes or their containers)
       if (mutation.type === 'attributes' && mutation.target) {
         const node = mutation.target;
+        if (node.nodeType !== 1) continue;
+
+        // Direct match: attribute changed on a tracked iframe itself
         if (
-          node.nodeType === 1 &&
           node.tagName === 'IFRAME' &&
           node.matches &&
           node.matches(frameSelector) &&
@@ -418,6 +424,21 @@
           triggerReason = 'attribute change on iframe: ' + (node.id || node.className || 'unknown');
           break;
         }
+
+        // Container match: a class/style change on a wrapper may have revealed a hidden
+        // tracked iframe (e.g. Webflow show/hide toggling display on a parent div).
+        if (node.querySelector) {
+          const candidate = node.querySelector(frameSelector);
+          if (candidate && candidate.dataset.wsIframeResized !== 'true') {
+            const rect = candidate.getBoundingClientRect();
+            if (rect.width > 0 && rect.height > 0) {
+              shouldRun = true;
+              triggerReason = 'container change revealed tracked iframe: ' + (candidate.id || candidate.className || 'unknown');
+              break;
+            }
+          }
+        }
+        continue; // attribute mutations don't have addedNodes — skip to next
       }
 
       // Handle added nodes
@@ -465,7 +486,7 @@
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ['class', 'id'], // Watch for class/id changes on iframes
+      attributeFilter: ['class', 'id', 'style'], // style catches Webflow display:none → block
     });
     console.log('[WhiteSwan Parent] resizeWatcher started - monitoring for new/changed iframes');
   }
