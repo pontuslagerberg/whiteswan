@@ -313,10 +313,17 @@
 
           // Re-attach iframeResize whenever the child page reloads (e.g. after a 401,
           // Bubble session reset, or any other navigation inside the iframe).
+          // firstLoadDone skips the very first 'load' event, which fires as the iframe
+          // finishes its initial load — calling resize() again at that point conflicts
+          // with iframeResizer's own in-progress handshake and breaks the connection.
+          let firstLoadDone = false;
           el.addEventListener('load', function () {
+            if (!firstLoadDone) {
+              firstLoadDone = true;
+              return; // initial load — let iframeResizer handle it internally
+            }
             console.log('[WhiteSwan Parent] iframe reloaded — re-attaching iframeResize:', el.id || el.className || '(no id)');
             try {
-              // Cleanly close the previous session if iframeResizer exposes the API
               if (el.iframeResizer && typeof el.iframeResizer.close === 'function') {
                 el.iframeResizer.close();
               }
